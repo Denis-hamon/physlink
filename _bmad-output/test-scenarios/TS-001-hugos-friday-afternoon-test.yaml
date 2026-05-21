@@ -1,0 +1,119 @@
+test_scenario:
+  id: TS-001
+  delivery_id: DD-001
+  name: "Hugo's Friday Afternoon Test — Validation"
+  status: draft
+  created: 2026-05-21
+  objectives:
+    - Verify the 5-step Colab flow works end-to-end on a real T4 GPU runtime
+    - Confirm physlink doctor correctly detects GO and NO-GO states
+    - Validate adaptation loop completes and produces a valid triptych
+    - Confirm time-to-science callout renders with real elapsed time
+
+happy_path:
+  - name: "README → Open in Colab in < 90 seconds"
+    steps:
+      - 1. Open https://github.com/[org]/physlink on a desktop browser
+      - 2. Read the headline and problem hook
+      - 3. Locate the Fast Action Bar
+      - 4. Click "Open in Colab"
+    expected:
+      - "readme-action-open-colab-button is visible in the first viewport"
+      - "Click navigates to quickstart.ipynb in Google Colab"
+    spec: "1.1-github-readme"
+
+  - name: "physlink doctor returns GO"
+    steps:
+      - 1. Open the quickstart notebook in Colab with T4 GPU runtime selected
+      - 2. Run Cell 1 (pip install physlink)
+      - 3. Run Cell 2 (physlink.doctor())
+    expected:
+      - "Install completes in < 60 seconds"
+      - "doctor() renders a table with Python, PyTorch, CUDA, VRAM, session estimate"
+      - "Green GO callout (colab-setup-report-go-verdict) is displayed"
+    spec: "1.2-colab-setup"
+
+  - name: "Universal Space API configuration passes validation"
+    steps:
+      - 1. Run ObservationSpace cell
+      - 2. Run ActionSpace cell
+      - 3. Run summary/explainability cells
+    expected:
+      - "[OK] ObservationSpace: proprioception, joints=7, velocity=True, dims=14"
+      - "[OK] ActionSpace: continuous, dims=7, bounds=(-1.0, 1.0)"
+      - "Summary table shows dims, bounds, dtype, compatibility"
+    spec: "1.3-colab-configuration"
+
+  - name: "Adaptation loop completes with checkpoint"
+    steps:
+      - 1. Run adapter initialization cell
+      - 2. Run trajectory source cell
+      - 3. Run adapter.fit() cell
+      - 4. Monitor progress bar through completion
+    expected:
+      - "Progress bar shows step count, ETA, prediction health badge, throughput"
+      - "Checkpoint is saved and path is printed"
+      - "adapter.fit() completes without error"
+    spec: "1.4-colab-adaptation-loop"
+
+  - name: "Validation result: triptych renders and export succeeds"
+    steps:
+      - 1. Run adapter.visualize() cell
+      - 2. Read triptych (imagination / real / difference panels)
+      - 3. Check time-to-science callout
+      - 4. Run export cell
+    expected:
+      - "Three synchronized GIF panels render inline"
+      - "Time-to-science callout shows elapsed time < 90 min"
+      - "Artifact list shows GIF, YAML, summary files"
+    spec: "1.5-colab-validation"
+
+error_states:
+  - trigger: "CPU-only runtime (no GPU)"
+    expected: "NO-GO callout with instruction: Runtime → Change runtime type → T4 GPU"
+    spec: "1.2-colab-setup"
+
+  - trigger: "VRAM < 4 GB"
+    expected: "Warning row in doctor table with memory optimization suggestion"
+    spec: "1.2-colab-setup"
+
+  - trigger: "ObservationSpace created with invalid dims (dims=0)"
+    expected: "Immediate validation error: [FAIL] ObservationSpace: dims must be > 0"
+    spec: "1.3-colab-configuration"
+
+  - trigger: "Colab session disconnect mid-adaptation"
+    expected: "Checkpoint is available; colab-loop-next-retry-checkpoint-link navigates to recovery cell"
+    spec: "1.4-colab-adaptation-loop"
+
+edge_cases:
+  - scenario: "Re-run any cell without re-running prior cells"
+    expected: "All cells are idempotent — no duplicate installs or state corruption"
+
+  - scenario: "VRAM exactly at threshold"
+    expected: "Warning shown but GO verdict still displayed"
+
+  - scenario: "Notebook URL shared to colleague"
+    expected: "Colleague can open notebook and run from Cell 1 without errors"
+
+design_system_validation:
+  note: "design_system_mode=none — no design tokens to validate"
+  checks:
+    - "GO verdict callout is visually distinct (green) from NO-GO (red)"
+    - "Progress bar is visible without relying on color alone (text label present)"
+    - "Triptych panels are labeled (Imagination / Real / Difference)"
+
+accessibility:
+  - "physlink doctor table uses [OK]/[WARN]/[FAIL] text labels (not color-only)"
+  - "Colab cell markdown headings form a logical hierarchy (H2 sections)"
+  - "All links have descriptive text (not 'click here')"
+
+sign_off:
+  pass_threshold: "100% of happy path tests pass; 80% of error state tests pass"
+  must_fix:
+    - "physlink doctor fails to detect GPU on T4 runtime"
+    - "adapter.fit() does not produce a valid checkpoint"
+    - "Triptych panels do not render"
+  nice_to_fix:
+    - "Minor timing differences in time-to-science callout"
+    - "Throughput metric fluctuates during first 10 steps"
+  approver: Denis

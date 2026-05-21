@@ -1,0 +1,6 @@
+{
+  "hardware": "T4 GPU",
+  "generated_by": "physlink maintainer",
+  "note": "Baseline generated on Tesla T4 GPU. Do NOT compare against A100, H100, or other hardware — benchmarks are not portable across GPU generations.",
+  "benchmarks": []
+}

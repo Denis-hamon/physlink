@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "env 'PROJECT_ROOT=/Users/dhamon/Documents/Dossier personnel/Worldchain' '/Users/dhamon/Documents/Dossier personnel/Worldchain/.claude/skills/bmad-story-automator/scripts/story-automator' stop-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

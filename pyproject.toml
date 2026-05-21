@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "physlink"
+version = "0.1.0"
+description = "Backend-agnostic adapter library for physical simulation ML"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "rich>=13.0",
+    "matplotlib>=3.7",
+    "pyyaml>=6.0",
+    "safetensors>=0.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4",
+    "mypy>=1.9",
+    "pytest>=8.0",
+    "pytest-benchmark>=4.0",
+    "pre-commit>=3.7",
+    "build>=1.2",
+    "torch",  # for adapters/ testing; excluded from core/ strict check
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src"]
+exclude = [".agents", ".claude", "_bmad", "_bmad-output", ".venv", "dist", "build"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "ANN", "RUF"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[[tool.mypy.overrides]]
+module = "physlink.adapters.*"
+ignore_missing_imports = true
+strict = false  # PyTorch stubs incomplete — ADR-002 defers to v0.3.0
+
+[[tool.mypy.overrides]]
+module = "physlink.utils.*"
+ignore_missing_imports = true
+# utils/ may import matplotlib/PIL which have partial stubs
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "gpu: requires CUDA GPU — excluded from test-cpu CI job (deselect with '-m not gpu')",
+]

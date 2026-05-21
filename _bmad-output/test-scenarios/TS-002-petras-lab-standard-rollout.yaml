@@ -1,0 +1,116 @@
+test_scenario:
+  id: TS-002
+  delivery_id: DD-002
+  name: "Petra's Lab Standard Rollout — Validation"
+  status: draft
+  created: 2026-05-21
+  objectives:
+    - Verify all 5 trust signal pages satisfy Petra's institutional scan criteria
+    - Confirm CHANGELOG format is correct and maintenance signal is strong
+    - Validate arXiv paper contains required sections for both Petra and Samuel
+    - Confirm GitHub templates have required checklist items
+
+happy_path:
+  - name: "Petra completes README scan in < 30 seconds"
+    steps:
+      - 1. Open GitHub README on desktop browser
+      - 2. Scan for license badge (top row)
+      - 3. Scan for arXiv badge
+      - 4. Scan for maintenance badge (latest release)
+      - 5. Locate "Evaluate for your lab →" action bar link
+    expected:
+      - "MIT license badge visible in first viewport"
+      - "arXiv badge present and links to paper"
+      - "Maintenance badge shows a recent version (< 6 months)"
+      - "readme-action-lab-path-link present in action bar"
+    spec: "2.1-github-readme"
+
+  - name: "CHANGELOG passes Petra's sustainability check"
+    steps:
+      - 1. Navigate to CHANGELOG.md from README footer link
+      - 2. Verify ≥ 3 releases with ISO dates
+      - 3. Find a breaking change entry with migration note
+    expected:
+      - "≥ 3 release entries in ## [X.Y.Z] - YYYY-MM-DD format"
+      - "At least one ⚠️ **Breaking:** entry with > **Migration:** note"
+      - "No entries that are just git commit hashes"
+    spec: "2.2-changelog"
+
+  - name: "arXiv paper passes credential audit"
+    steps:
+      - 1. Click arXiv badge from README
+      - 2. Verify affiliations (university or research lab)
+      - 3. Find Physical Invariants section
+      - 4. Locate GitHub link
+    expected:
+      - "Affiliations show academic institution(s)"
+      - "Physical Invariants section exists with a named law + worked example"
+      - "Benchmark table includes physical constraint violation metric"
+      - "GitHub link present in abstract or introduction"
+    spec: "2.3-arxiv-paper"
+
+  - name: "Lab Adoption Guide covers all Petra requirements"
+    steps:
+      - 1. Navigate to Lab Adoption Guide from README
+      - 2. Find AdaptationJobs section with code example
+      - 3. Find buffer sharing section
+      - 4. Find BibTeX citation block
+    expected:
+      - "AdaptationJob(config, name='petra-arm7-v2') code example present"
+      - "TrajectoryBuffer.export() and .load() examples present"
+      - "BibTeX block with @article citation"
+    spec: "2.4-lab-adoption-guide"
+
+  - name: "GitHub templates confirm community governance"
+    steps:
+      - 1. Navigate to .github/PULL_REQUEST_TEMPLATE.md
+      - 2. Verify CHANGELOG checkbox in checklist
+      - 3. Verify tests pass checkbox
+      - 4. Open ISSUE_TEMPLATE/ folder
+      - 5. Verify bug_report.md and feature_request.md exist
+    expected:
+      - "PR checklist has '- [ ] CHANGELOG updated' item"
+      - "PR checklist has '- [ ] Tests pass' item"
+      - "≥ 2 issue templates present"
+    spec: "2.5-github-templates"
+
+error_states:
+  - trigger: "CHANGELOG is absent"
+    expected: "Hard NO-GO for Petra — no path to recovery on this page"
+
+  - trigger: "arXiv paper has no Physical Invariants section"
+    expected: "Hard NO-GO for Samuel — blocks Scenario 03 entirely"
+
+  - trigger: ".github/ folder is empty"
+    expected: "Petra notes risk flag: 'no structured contribution process'"
+
+edge_cases:
+  - scenario: "CHANGELOG has < 3 releases (new project)"
+    expected: "Petra sees 'thin' state — notes 'early-stage' but does not hard fail if entries are dated"
+
+  - scenario: "Maintenance badge shows version > 6 months old"
+    expected: "Petra treats as stale — risk flag in memo"
+
+design_system_validation:
+  note: "design_system_mode=none — GitHub and arXiv control rendering"
+  checks:
+    - "README badges are aligned in a single row in the first viewport"
+    - "CHANGELOG uses consistent heading levels (H2 for releases, H3 for categories)"
+    - "Lab Adoption Guide code blocks are properly fenced and syntax-highlighted"
+
+accessibility:
+  - "All README badge images have meaningful alt text"
+  - "CHANGELOG uses semantic heading hierarchy"
+  - "Lab Adoption Guide code examples have copy-accessible formatting"
+
+sign_off:
+  pass_threshold: "All happy path tests pass"
+  must_fix:
+    - "MIT license badge absent from README"
+    - "CHANGELOG absent or has no dated entries"
+    - "arXiv paper has no Physical Invariants section"
+    - "PR template missing CHANGELOG checkbox"
+  nice_to_fix:
+    - "Domain Extension issue template absent (recommended, not blocking)"
+    - "Maintenance badge not yet configured"
+  approver: Denis
