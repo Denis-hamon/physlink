@@ -54,3 +54,5 @@ For each release:
 6. `publish.yml` triggers automatically — notebook pin is validated, package is built and published, smoke test confirms the install works
 
 **Important:** Ensure `test-cpu` CI passes on the release commit before pushing the tag.
+
+<!-- TODO: replace YOUR-ORG in README.md badge URLs with the actual GitHub username/org once the remote is configured (`git remote get-url origin`). -->
