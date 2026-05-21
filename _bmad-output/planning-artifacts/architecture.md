@@ -109,9 +109,10 @@ Python ML infrastructure library (PyPI package) — pas de web framework.
 Rationale: Gouvernance ouverte PyPA, auditablement neutre pour adoption institutionnelle.
 Rejeté: uv (Astral VC-backed), hatch (opinionated, faible adoption ML).
 
-**2. Linting: ruff --fix en pre-commit, bloquant en CI à partir de v0.2.0**
+**2. Linting: ruff --fix en pre-commit, ruff check bloquant en CI dès v0.1.0**
 Rationale: Contributeurs = chercheurs ML. Autofix silencieux élimine la friction de linting.
-Bloquant différé à v0.2.0 (deuxième minor release en semver — pas les patches v0.1.x).
+Implémentation (Story 1.4): `ruff check src/` est bloquant en CI depuis v0.1.0 (`.github/workflows/ci.yml`).
+Note: La planification initiale différait le blocage CI à v0.2.0 — l'implémentation a choisi de bloquer dès v0.1.0 pour des raisons de qualité. Cette décision est définitive.
 
 **3. Type checking: mypy strict sur core/ uniquement**
 Rationale: Stubs PyTorch incomplets rendent mypy strict sur adapters/ inutilement bloquant.

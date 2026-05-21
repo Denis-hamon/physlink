@@ -35,7 +35,7 @@
 # - BLOCKER: Story 6.1 requires README discoverability decision (owner + deadline) before dev start
 
 generated: 2026-05-21
-last_updated: 2026-05-22  # story 1.6 → done; epic-1 → done
+last_updated: 2026-05-22  # story 1.6 → done; epic-1 → done; epic-1-retrospective → done; epic-2 → in-progress; story 2.1 → done
 project: PhysLink
 project_key: NOKEY
 tracking_system: file-system
@@ -54,15 +54,15 @@ development_status:
   1-4-github-actions-ci-pipeline: done
   1-5-pypi-publication-via-oidc: done
   1-6-readme-badges-and-dual-path-action-bar: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   # ─────────────────────────────────────────────────
   # EPIC 2: Universal Space API — Environment Configuration
   # Goal: Configure 7-DOF arm in < 15 lines + .explain() for debugging
   # Requires: Epic 1
   # ─────────────────────────────────────────────────
-  epic-2: backlog
-  2-1-trajectorybatch-core-type: backlog
+  epic-2: in-progress
+  2-1-trajectorybatch-core-type: done
   2-2-observationspace-construction-and-validation: backlog
   2-3-actionspace-construction-and-validation: backlog
   2-4-space-explain-introspection: backlog

@@ -1,5 +1,7 @@
 """PhysLink — backend-agnostic adapter library for physical simulation ML."""
 
+__version__ = "0.1.0"
+
 from physlink.core.exceptions import PhysLinkError
 from physlink.utils.diagnostics import doctor
 
