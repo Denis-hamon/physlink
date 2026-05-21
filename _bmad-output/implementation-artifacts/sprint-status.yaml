@@ -50,7 +50,7 @@ development_status:
   epic-1: in-progress
   1-1-package-scaffold-and-development-toolchain: done
   1-2-exception-hierarchy-foundation: done
-  1-3-physlink-doctor-diagnostic-scan: backlog
+  1-3-physlink-doctor-diagnostic-scan: done
   1-4-github-actions-ci-pipeline: backlog
   1-5-pypi-publication-via-oidc: backlog
   1-6-readme-badges-and-dual-path-action-bar: backlog
