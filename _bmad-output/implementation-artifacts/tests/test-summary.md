@@ -1,3 +1,58 @@
+# Test Automation Summary — Story 2.2: ObservationSpace Construction and Validation
+
+**Date:** 2026-05-22
+**Framework:** pytest 9.0.3 / Python 3.12.1
+**Story file:** `_bmad-output/implementation-artifacts/2-2-observationspace-construction-and-validation.md`
+
+---
+
+## Generated / Updated Tests
+
+### Unit Tests
+
+- [x] `tests/unit/core/test_spaces.py` — 28 tests (22 initiaux + 6 gaps comblés), 0 échec
+
+---
+
+## Gaps Appliqués (6 nouveaux tests ajoutés, 22 → 28)
+
+### `TestObservationSpaceFromProprioception`
+- [x] `test_normalize_stored_true` — `normalize=True` jamais testé, seul le défaut `False` l'était
+
+### `TestObservationSpaceValidation`
+- [x] `test_false_bool_joints_raises_validation_error` — Seul `True` était testé ; `False` (bool) doit aussi lever `ValidationError`
+- [x] `test_zero_joints_error_message_contains_value` — AC#2 spécifie `joints=0` dans le message — non vérifié
+- [x] `test_negative_joints_error_message_got_expected_fix` — Chemin négatif sans vérification du format Got/Expected/Fix
+- [x] `test_string_joints_error_message_got_expected_fix` — AC#3 spécifie le format complet — seul "str" était vérifié
+
+### `TestObservationSpaceInterface`
+- [x] `test_repr_with_velocity_true` — `repr()` avec `velocity=True` non testé
+
+---
+
+## Coverage Story 2.2 (AC mapping)
+
+| Acceptance Criteria | Tests couvrant |
+|---|---|
+| AC #1 — Construction valide, dims / include_velocity / _joints / clip_bounds / normalize | `TestObservationSpaceFromProprioception` (11 tests) |
+| AC #2 — `ValidationError` pour `joints=0`, message Got/Expected/Fix | `test_zero_joints_raises_validation_error`, `test_negative_joints_raises_validation_error`, `test_zero_joints_error_message_*` (3), `test_negative_joints_error_message_got_expected_fix` |
+| AC #3 — `ValidationError` pour `joints="seven"` (mauvais type), message Got/Expected/Fix + type | `test_string_joints_*` (3), `test_float_joints_*`, `test_bool_joints_*`, `test_false_bool_joints_*`, `test_none_joints_*` |
+| Contrainte : no torch | `TestObservationSpaceNoTorch` (1) |
+| NFR-09 idempotence | `test_idempotent_construction` |
+
+**Total : 28 tests — 28 passed, 0 failed, 0 skipped**
+
+---
+
+## État de la suite complète
+
+| Scope | Résultat |
+|---|---|
+| `tests/unit/core/test_spaces.py` | ✅ 28 passed |
+| Reste de la suite (hors test_spaces.py) | ✅ 192 passed, 2 skipped (inchangé) |
+
+---
+
 # Test Automation Summary — Story 1.2: Exception Hierarchy Foundation
 
 **Date:** 2026-05-21
