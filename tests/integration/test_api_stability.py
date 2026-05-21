@@ -10,7 +10,6 @@ from __future__ import annotations
 import pytest
 
 
-@pytest.mark.skip(reason="Activated by Story 1.5 once doctor and PhysLinkError are implemented")
 def test_epic1_api_symbols() -> None:
     import physlink
 

@@ -1,0 +1,60 @@
+name: Publish
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write  # Required for OIDC token generation — cannot be narrowed further
+
+jobs:
+  publish:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+    environment: pypi  # GitHub Actions environment linked to PyPI Trusted Publisher
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Validate notebook version pin
+        run: |
+          VERSION=$(echo "$GITHUB_REF_NAME" | sed 's/^v//')
+          echo "Validating notebooks/quickstart.ipynb pin for physlink==${VERSION}"
+          if ! grep -q "pip install physlink==${VERSION}" notebooks/quickstart.ipynb; then
+            echo "ERROR: notebooks/quickstart.ipynb must reference 'pip install physlink==${VERSION}'"
+            echo "  Got:      $(grep 'pip install physlink' notebooks/quickstart.ipynb || echo 'no pip install physlink line found')"
+            echo "  Expected: pip install physlink==${VERSION}"
+            echo "  Fix:      update notebooks/quickstart.ipynb cell 1 to '!pip install physlink==${VERSION}' before pushing tag"
+            exit 1
+          fi
+          echo "OK: notebook pin matches release version"
+
+      - name: Install build dependencies
+        run: pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No with.password or with.user — OIDC Trusted Publisher handles auth automatically
+
+      - name: Smoke test — verify PyPI install
+        run: |
+          VERSION=$(echo "$GITHUB_REF_NAME" | sed 's/^v//')
+          echo "Waiting 60s for PyPI to propagate physlink==${VERSION}..."
+          sleep 60
+          pip install "physlink==${VERSION}"
+          python -c "
+          import physlink
+          assert 'doctor' in physlink.__all__, f'doctor missing from __all__: {physlink.__all__}'
+          assert 'PhysLinkError' in physlink.__all__, f'PhysLinkError missing from __all__: {physlink.__all__}'
+          from physlink import doctor, PhysLinkError
+          print('OK: physlink==$VERSION smoke test passed — doctor and PhysLinkError importable')
+          "
