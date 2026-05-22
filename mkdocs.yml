@@ -7,6 +7,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  font: false
   features:
     - navigation.tabs
     - navigation.sections
@@ -14,15 +15,14 @@ theme:
     - search.suggest
     - search.highlight
     - content.code.copy
+    - navigation.top
   palette:
-    - scheme: default
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+    scheme: slate
+    primary: black
+    accent: white
+
+extra_css:
+  - stylesheets/vercel.css
 
 plugins:
   - search
