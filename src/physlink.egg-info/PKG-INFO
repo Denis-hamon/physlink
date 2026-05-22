@@ -11,6 +11,7 @@ Requires-Dist: rich>=13.0
 Requires-Dist: matplotlib>=3.7
 Requires-Dist: pyyaml>=6.0
 Requires-Dist: safetensors>=0.4
+Requires-Dist: Pillow>=9.0
 Provides-Extra: dev
 Requires-Dist: ruff>=0.4; extra == "dev"
 Requires-Dist: mypy>=1.9; extra == "dev"

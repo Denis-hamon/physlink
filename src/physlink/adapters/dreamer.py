@@ -23,6 +23,8 @@ _STAGE_NAMES: tuple[str, ...] = (
     "critic_update",
 )
 
+_VIZ_SEQ_LEN: int = 50  # max steps used for triptych inference
+
 
 class _DebugPanel:
     def __init__(self) -> None:
@@ -179,7 +181,7 @@ def _save_checkpoint(
     metadata = {
         "physlink_version": physlink.__version__,
         "adapter_class": "DreamerV3Adapter",
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "checkpoint_step": str(step),
     }
     save_file(tensors, path, metadata=metadata)
@@ -274,6 +276,8 @@ class DreamerV3Adapter(BaseAdapter):
         self._critic: Any | None = None
         self._loss_history: list[float] = []
         self._baseline_loss: float | None = None
+        self._fit_elapsed_seconds: float | None = None
+        self._triptych_path: str | None = None
 
     def _initialize_model(self, device: Any) -> None:  # noqa: ANN401
         import torch.nn as nn
@@ -540,6 +544,8 @@ class DreamerV3Adapter(BaseAdapter):
             >>> trajectories = [{"obs": [0.1] * 7, "action": [0.0] * 7}] * 100
             >>> adapter.fit(trajectories, steps=10, debug_hooks=True)
         """
+        import time
+
         from physlink.core.exceptions import ValidationError
 
         if isinstance(steps, bool) or not isinstance(steps, int) or steps <= 0:
@@ -604,6 +610,8 @@ class DreamerV3Adapter(BaseAdapter):
         optimizer = torch.optim.Adam(all_params, lr=3e-4)
         scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
 
+        _fit_start_time = time.monotonic()
+
         if debug_hooks:
             debug_panel = _DebugPanel()
             with _build_debug_layout(steps, debug_panel) as (progress, task_id):
@@ -652,6 +660,8 @@ class DreamerV3Adapter(BaseAdapter):
                             completed, checkpoint_dir,
                         )
 
+        self._fit_elapsed_seconds = time.monotonic() - _fit_start_time
+
     def explain(self) -> dict[str, Any]:
         """Return a metadata dict describing this adapter's space configuration.
 
@@ -673,16 +683,104 @@ class DreamerV3Adapter(BaseAdapter):
     def visualize(
         self,
         trajectories: list[dict[str, Any]] | TrajectoryBatch,
-    ) -> None:
-        """Produce triptych GIF. Implemented in Story 3.5.
+        output_path: str = "physlink_triptych.gif",
+    ) -> str:
+        """Produce a triptych GIF comparing Imagination, Real, and Difference panels.
+
+        Runs a single inference pass through the trained world model to produce
+        reconstructed (Imagination) observations, then renders them alongside the
+        real observations and the absolute difference as a 3-panel GIF.
+
+        Prints a "Friday afternoon window" callout comparing elapsed adaptation
+        time to the documented from-scratch baseline.
 
         Args:
-            trajectories: Trajectory dataset to visualize.
+            trajectories: Trajectory dataset to visualize. Uses the first trajectory
+                for the panel rendering. list[dict] is silently converted to
+                TrajectoryBatch. Each dict must contain at minimum an "obs" key.
+            output_path: File path for the output GIF. Defaults to
+                "physlink_triptych.gif" in the current working directory.
+
+        Returns:
+            Absolute path to the saved GIF file.
 
         Raises:
-            NotImplementedError: Always — implemented in Story 3.5.
+            AdapterError: If the model has not been initialized via fit() or
+                load_checkpoint().
+
+        Example:
+            >>> adapter = DreamerV3Adapter(obs, act)
+            >>> adapter.fit(trajectories, steps=1000)
+            >>> path = adapter.visualize(trajectories)
+            >>> print(path)  # absolute path to physlink_triptych.gif
         """
-        raise NotImplementedError("visualize() is implemented in Story 3.5.")
+        from physlink.core.exceptions import AdapterError
+
+        if self._model is None:
+            raise AdapterError(
+                "DreamerV3Adapter.visualize: model not initialized.\n"
+                "  Got:      self._model is None\n"
+                "  Expected: model weights loaded via fit() or load_checkpoint()\n"
+                "  Fix:      call adapter.fit(trajectories, steps=N) before visualize()."
+            )
+
+        if isinstance(trajectories, list):
+            trajectories = TrajectoryBatch.from_list(trajectories)
+
+        import numpy as np
+        import torch
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self._model.to(device)
+
+        obs_raw = [d["obs"] for d in trajectories.data[:_VIZ_SEQ_LEN]]
+        obs_seq = torch.tensor(obs_raw, dtype=torch.float32, device=device)  # (T, obs_dims)
+
+        with torch.no_grad():
+            h_state = torch.zeros(1, self._model.gru.hidden_size, device=device)
+            imagination_frames = []
+            for t in range(obs_seq.shape[0]):
+                obs_t = obs_seq[t : t + 1]  # shape (1, obs_dims)
+                act_t = torch.zeros(1, self.act_space.dims, device=device)
+                encoded = self._model.encoder(obs_t)
+                gru_input = torch.cat([encoded, act_t], dim=-1)
+                h_state = self._model.gru(gru_input, h_state)
+                post_params = self._model.posterior(torch.cat([h_state, encoded], dim=-1))
+                post_mean, _ = post_params.chunk(2, dim=-1)
+                recon = self._model.decoder(torch.cat([h_state, post_mean], dim=-1))
+                imagination_frames.append(recon.squeeze(0).cpu().numpy())
+
+        imagination_np = np.stack(imagination_frames)  # (T, obs_dims)
+        real_np = obs_seq.cpu().numpy()  # (T, obs_dims)
+
+        from physlink.utils.visualization import (
+            _FROM_SCRATCH_BASELINE_LABEL,
+            _FROM_SCRATCH_BASELINE_SECONDS,
+            render_triptych,
+        )
+
+        gif_path = render_triptych(imagination_np, real_np, output_path)
+        self._triptych_path = gif_path
+        print(f"[physlink] Triptych saved: {gif_path}")
+
+        elapsed = self._fit_elapsed_seconds
+        if elapsed is not None:
+            elapsed_min = elapsed / 60
+            baseline_hours = _FROM_SCRATCH_BASELINE_SECONDS / 3600
+            speedup = _FROM_SCRATCH_BASELINE_SECONDS / max(elapsed, 1.0)
+            print(
+                f"[physlink] ⏱  Adaptation complete in {elapsed_min:.1f} min\n"
+                f"           vs. from-scratch baseline ({_FROM_SCRATCH_BASELINE_LABEL}): "
+                f"{baseline_hours:.0f}h\n"
+                f"           Speedup: ~{speedup:.0f}x"
+            )
+        else:
+            print(
+                "[physlink] ⏱  Adaptation time not available "
+                "(call fit() before visualize() to see the Friday afternoon window callout)"
+            )
+
+        return gif_path
 
     def export(self, path: str) -> None:
         """Export artifact bundle. Implemented in Story 3.6.

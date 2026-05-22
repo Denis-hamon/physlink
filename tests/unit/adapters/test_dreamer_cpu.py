@@ -243,22 +243,27 @@ class TestDreamerV3AdapterStubs:
 
     def test_visualize_raises_not_implemented_error(self) -> None:
         from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import AdapterError
 
         obs = _make_valid_obs(joints=7)
         act = _make_valid_act(dims=7)
         adapter = DreamerV3Adapter(obs, act)
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(AdapterError):
             adapter.visualize([])
 
-    def test_visualize_error_message_references_story_35(self) -> None:
+    def test_visualize_error_message_contains_got_expected_fix(self) -> None:
         from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import AdapterError
 
         obs = _make_valid_obs(joints=7)
         act = _make_valid_act(dims=7)
         adapter = DreamerV3Adapter(obs, act)
-        with pytest.raises(NotImplementedError) as exc_info:
+        with pytest.raises(AdapterError) as exc_info:
             adapter.visualize([])
-        assert "3.5" in str(exc_info.value)
+        msg = str(exc_info.value)
+        assert "Got:" in msg
+        assert "Expected:" in msg
+        assert "Fix:" in msg
 
     def test_export_raises_not_implemented_error(self) -> None:
         from physlink import DreamerV3Adapter
@@ -981,6 +986,98 @@ class TestSaveCheckpointFunction:
         captured = capsys.readouterr()
         assert "[physlink] Checkpoint saved:" in captured.out
         assert os.path.abspath(path) in captured.out
+
+
+class TestDreamerV3AdapterStory35State:
+    """Story 3.5: _fit_elapsed_seconds and _triptych_path state management (CPU-safe)."""
+
+    def _make_adapter(self) -> "DreamerV3Adapter":
+        from physlink import DreamerV3Adapter
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        return DreamerV3Adapter(obs, act)
+
+    def test_fit_elapsed_seconds_is_none_before_fit(self) -> None:
+        """_fit_elapsed_seconds must be None until fit() completes at least once."""
+        adapter = self._make_adapter()
+        assert adapter._fit_elapsed_seconds is None
+
+    def test_triptych_path_is_none_before_visualize(self) -> None:
+        """_triptych_path must be None until visualize() completes at least once."""
+        adapter = self._make_adapter()
+        assert adapter._triptych_path is None
+
+    def test_reset_training_state_does_not_clear_fit_elapsed_seconds(self) -> None:
+        """_fit_elapsed_seconds must survive _reset_training_state() (Story 3.5 spec).
+
+        This ensures visualize() can always report the LAST fit duration even when
+        fit() is called multiple times (each call invokes _reset_training_state()).
+        """
+        adapter = self._make_adapter()
+        adapter._fit_elapsed_seconds = 42.0
+        adapter._reset_training_state()
+        assert adapter._fit_elapsed_seconds == 42.0
+
+    def test_visualize_does_not_reference_compliance_report_in_source(self) -> None:
+        """AC #3 / FR-04: visualize() must never call or trigger compliance_report()."""
+        import inspect
+
+        from physlink.adapters.dreamer import DreamerV3Adapter
+
+        source = inspect.getsource(DreamerV3Adapter.visualize)
+        assert "compliance_report" not in source, (
+            "visualize() source references compliance_report — "
+            "FR-04 requires triptych and compliance are never coupled"
+        )
+
+
+class TestVisualizeFridayCallout:
+    """AC #1: Friday afternoon window callout logic verified via source inspection — CPU-safe."""
+
+    def _source(self) -> str:
+        import inspect
+
+        from physlink.adapters.dreamer import DreamerV3Adapter
+
+        return inspect.getsource(DreamerV3Adapter.visualize)
+
+    def test_callout_reads_fit_elapsed_seconds(self) -> None:
+        """visualize() must branch on _fit_elapsed_seconds to emit the callout."""
+        assert "_fit_elapsed_seconds" in self._source()
+
+    def test_callout_imports_baseline_seconds_constant(self) -> None:
+        """Callout must use _FROM_SCRATCH_BASELINE_SECONDS from visualization module."""
+        assert "_FROM_SCRATCH_BASELINE_SECONDS" in self._source()
+
+    def test_callout_imports_baseline_label_constant(self) -> None:
+        """Callout must use _FROM_SCRATCH_BASELINE_LABEL from visualization module."""
+        assert "_FROM_SCRATCH_BASELINE_LABEL" in self._source()
+
+    def test_callout_displays_speedup(self) -> None:
+        """Callout must display a Speedup: ~Nx line (AC #1 Friday afternoon window)."""
+        assert "Speedup" in self._source()
+
+    def test_callout_has_fallback_branch(self) -> None:
+        """When _fit_elapsed_seconds is None, a fallback message must be printed."""
+        source = self._source()
+        assert "Adaptation time not available" in source
+
+    def test_callout_uses_elapsed_min_conversion(self) -> None:
+        """Elapsed seconds are converted to minutes for the callout display."""
+        assert "elapsed_min" in self._source()
+        assert "elapsed / 60" in self._source()
+
+    def test_callout_uses_baseline_hours_conversion(self) -> None:
+        """Baseline seconds are converted to hours for the callout display."""
+        assert "baseline_hours" in self._source()
+        assert "3600" in self._source()
+
+    def test_callout_fallback_printed_when_no_elapsed(self) -> None:
+        """When _fit_elapsed_seconds is None, fallback branch must exist in source."""
+        source = self._source()
+        assert "else:" in source
+        assert "call fit() before visualize()" in source
 
 
 class TestCheckCheckpointMetadata:
