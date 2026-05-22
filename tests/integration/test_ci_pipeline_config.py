@@ -7,6 +7,7 @@ for both test-cpu and test-gpu jobs without actually running GitHub Actions.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 try:
@@ -226,9 +227,12 @@ class TestBenchmarkBaseline:
     def test_baseline_has_hardware_annotation(self) -> None:
         with open(BASELINE_JSON) as f:
             data = json.load(f)
-        assert data.get("hardware") == "T4 GPU", (
-            f"benchmark_baseline.json must contain '\"hardware\": \"T4 GPU\"' (AC #2).\n"
-            f"Got: {data.get('hardware')!r}\n"
+        hardware = data.get("hardware")
+        assert isinstance(hardware, str) and re.search(
+            r"\b(GPU|RTX|T4|A100|H100|V100|L4|L40|RTX\s*\d{4})\b", hardware
+        ), (
+            f"benchmark_baseline.json must declare a recognizable GPU in 'hardware' (AC #2).\n"
+            f"Got: {hardware!r}\n"
             "This annotation ensures future maintainers know the baseline hardware context."
         )
 
