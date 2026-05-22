@@ -1,0 +1,1409 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Backend-agnostic adapter library for physical simulation ML">
+      
+      
+      
+        <link rel="canonical" href="https://Denis-hamon.github.io/physlink/architecture/">
+      
+      
+        <link rel="prev" href="../lab-adoption-guide/">
+      
+      
+        <link rel="next" href="../source-tree-analysis/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Architecture - PhysLink</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/vercel.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="black">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#physlink-architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="PhysLink" class="md-header__button md-logo" aria-label="PhysLink" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PhysLink
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Denis-hamon/physlink" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Denis-hamon/physlink
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../domain-scientists/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Domain Scientists
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../lab-adoption-guide/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Lab Adoption Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  Developer
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="PhysLink" class="md-nav__button md-logo" aria-label="PhysLink" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    PhysLink
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Denis-hamon/physlink" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Denis-hamon/physlink
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../domain-scientists/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Domain Scientists
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab-adoption-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Adoption Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developer
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technology Stack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-pattern-layered-library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Pattern: Layered Library
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#public-api-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Public API Surface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#component-deep-dive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Deep-Dive
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component Deep-Dive">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coreexceptionspy-exception-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        core/exceptions.py — Exception Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#corespacespy-space-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        core/spaces.py — Space API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#core_typespy-data-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        core/_types.py — Data Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#corevalidationpy-invariant-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        core/validation.py — Invariant System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adaptersdreamerpy-dreamerv3adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        adapters/dreamer.py — DreamerV3Adapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utilsdiagnosticspy-doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        utils/diagnostics.py — doctor()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utilsvisualizationpy-render_triptych" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        utils/visualization.py — render_triptych()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing Strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cicd-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI/CD Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-design-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Design Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-tree-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Tree
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contribution-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contribution Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="physlink-architecture">PhysLink — Architecture</h1>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>PhysLink is a backend-agnostic Python library that connects physical simulation environments to ML frameworks. It provides a universal space API, a DreamerV3 adaptation loop, invariant validation, and environment diagnostics — all in a single <code>pip install physlink</code>.</p>
+<p><strong>Version:</strong> 0.1.2<br />
+<strong>Language:</strong> Python 3.10+<br />
+<strong>Architecture pattern:</strong> Layered library (core / adapters / utils)<br />
+<strong>Repository type:</strong> Monolith (src layout)<br />
+<strong>Distribution:</strong> PyPI wheel (<code>physlink-0.1.2-py3-none-any.whl</code>)</p>
+<hr />
+<h2 id="technology-stack">Technology Stack</h2>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Technology</th>
+<th>Version</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language</td>
+<td>Python</td>
+<td>≥ 3.10</td>
+<td>strict typing via mypy</td>
+</tr>
+<tr>
+<td>Build backend</td>
+<td>setuptools</td>
+<td>≥ 68</td>
+<td>src-layout, <code>find_packages(where=["src"])</code></td>
+</tr>
+<tr>
+<td>Dependency resolver</td>
+<td>uv</td>
+<td>—</td>
+<td>lockfile at <code>uv.lock</code></td>
+</tr>
+<tr>
+<td>Core deps</td>
+<td>numpy</td>
+<td>≥ 1.24</td>
+<td>trajectory data</td>
+</tr>
+<tr>
+<td>Core deps</td>
+<td>rich</td>
+<td>≥ 13.0</td>
+<td>progress bar, debug panel</td>
+</tr>
+<tr>
+<td>Core deps</td>
+<td>matplotlib</td>
+<td>≥ 3.7</td>
+<td>triptych GIF, compliance plot</td>
+</tr>
+<tr>
+<td>Core deps</td>
+<td>pyyaml</td>
+<td>≥ 6.0</td>
+<td>AdaptationConfig serialization</td>
+</tr>
+<tr>
+<td>Core deps</td>
+<td>safetensors</td>
+<td>≥ 0.4</td>
+<td>checkpoint storage</td>
+</tr>
+<tr>
+<td>Core deps</td>
+<td>Pillow</td>
+<td>≥ 9.0</td>
+<td>GIF rendering</td>
+</tr>
+<tr>
+<td>Optional (GPU)</td>
+<td>torch</td>
+<td>any</td>
+<td>DreamerV3 training; detected at runtime</td>
+</tr>
+<tr>
+<td>Linter</td>
+<td>ruff</td>
+<td>≥ 0.4</td>
+<td>E, F, W, I, N, UP, ANN, RUF rules</td>
+</tr>
+<tr>
+<td>Type checker</td>
+<td>mypy</td>
+<td>≥ 1.9</td>
+<td>strict on <code>core/</code>; relaxed on <code>adapters/</code>, <code>utils/</code></td>
+</tr>
+<tr>
+<td>Test runner</td>
+<td>pytest</td>
+<td>≥ 8.0</td>
+<td>markers: <code>gpu</code></td>
+</tr>
+<tr>
+<td>Benchmarks</td>
+<td>pytest-benchmark</td>
+<td>≥ 4.0</td>
+<td>baseline in <code>tests/perf/baselines/</code></td>
+</tr>
+<tr>
+<td>Pre-commit</td>
+<td>ruff</td>
+<td>v0.4.10</td>
+<td>auto-fix + format</td>
+</tr>
+<tr>
+<td>Docs</td>
+<td>mkdocs-material</td>
+<td>≥ 9.5</td>
+<td>with mkdocstrings (Google style)</td>
+</tr>
+<tr>
+<td>Docs versioning</td>
+<td>mike</td>
+<td>≥ 2.1</td>
+<td>GitHub Pages multi-version</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="architecture-pattern-layered-library">Architecture Pattern: Layered Library</h2>
+<pre><code>physlink (public API — 7 symbols)
+├── core/           ← pure Python, no GPU deps at import time
+│   ├── exceptions  ← PhysLinkError hierarchy
+│   ├── spaces      ← ObservationSpace, ActionSpace
+│   ├── _types      ← TrajectoryBatch, TrajectoryBuffer, AdaptationConfig, AdaptationRun
+│   ├── adapter     ← BaseAdapter ABC
+│   └── validation  ← register_invariant, ComplianceReport
+├── adapters/       ← backend-specific; imports torch lazily
+│   └── dreamer     ← DreamerV3Adapter
+└── utils/          ← standalone utilities; lazy ML deps
+    ├── diagnostics ← doctor()
+    └── visualization ← render_triptych()
+</code></pre>
+<p><strong>Key invariant:</strong> <code>core/</code> has zero ML framework imports at module level. <code>torch</code> is only imported inside function bodies in <code>adapters/</code> and <code>utils/</code>. This allows <code>import physlink</code> and <code>physlink.doctor()</code> to work even when PyTorch is not installed.</p>
+<hr />
+<h2 id="public-api-surface">Public API Surface</h2>
+<p>The stable public API for v0.1.x is exactly <strong>7 symbols</strong> exported from <code>physlink.__all__</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Type</th>
+<th>Source module</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>doctor</code></td>
+<td>function</td>
+<td><code>utils/diagnostics.py</code></td>
+<td>Go/No-Go env diagnostic</td>
+</tr>
+<tr>
+<td><code>ObservationSpace</code></td>
+<td>class</td>
+<td><code>core/spaces.py</code></td>
+<td>Proprioceptive obs space</td>
+</tr>
+<tr>
+<td><code>ActionSpace</code></td>
+<td>class</td>
+<td><code>core/spaces.py</code></td>
+<td>Continuous action space</td>
+</tr>
+<tr>
+<td><code>DreamerV3Adapter</code></td>
+<td>class</td>
+<td><code>adapters/dreamer.py</code></td>
+<td>DreamerV3 adaptation loop</td>
+</tr>
+<tr>
+<td><code>register_invariant</code></td>
+<td>function</td>
+<td><code>core/validation.py</code></td>
+<td>Attach invariant check to adapter</td>
+</tr>
+<tr>
+<td><code>ComplianceReport</code></td>
+<td>class</td>
+<td><code>core/validation.py</code></td>
+<td>Invariant compliance results</td>
+</tr>
+<tr>
+<td><code>PhysLinkError</code></td>
+<td>exception</td>
+<td><code>core/exceptions.py</code></td>
+<td>Base exception class</td>
+</tr>
+</tbody>
+</table>
+<p>Advanced types available but not in <code>__all__</code>: <code>AdaptationConfig</code>, <code>AdaptationRun</code>, <code>TrajectoryBatch</code>, <code>TrajectoryBuffer</code> (import from <code>physlink.core._types</code>).</p>
+<hr />
+<h2 id="component-deep-dive">Component Deep-Dive</h2>
+<h3 id="coreexceptionspy-exception-hierarchy"><code>core/exceptions.py</code> — Exception Hierarchy</h3>
+<p>All exceptions follow the <strong>Got/Expected/Fix</strong> message template for human-readable, machine-parseable error context.</p>
+<pre><code>PhysLinkError (base)
+├── ConfigurationError   — invalid constructor arguments
+├── ValidationError      — runtime data violations
+├── AdapterError         — PhysLink-managed I/O failures
+└── CheckpointError      — checkpoint-related failures
+    ├── CheckpointCorruptError   — malformed/unreadable file
+    └── CheckpointVersionError   — incompatible physlink_version in metadata
+                                   (carries .checkpoint_version and .current_version attrs)
+</code></pre>
+<h3 id="corespacespy-space-api"><code>core/spaces.py</code> — Space API</h3>
+<p><strong>Construction</strong>: factory classmethods only (<code>from_proprioception</code>, <code>continuous</code>) — no direct constructor calls. All validation at creation time.</p>
+<p><strong>ObservationSpace</strong>:
+- <code>from_proprioception(joints, include_velocity, clip_bounds, normalize)</code>
+- <code>dims = joints * 2 if include_velocity else joints</code>
+- <code>explain()</code> → JSON-serializable dict
+- Hashable, equality-comparable</p>
+<p><strong>ActionSpace</strong>:
+- <code>continuous(dims, bounds)</code> — per-dimension <code>(min, max)</code> tuples
+- Validates: dims ≥ 1, len(bounds) == dims, each bound has min ≤ max
+- <code>explain()</code> → JSON-serializable dict</p>
+<h3 id="core_typespy-data-types"><code>core/_types.py</code> — Data Types</h3>
+<p><strong>TrajectoryBatch</strong>: immutable container for <code>list[dict]</code> (at minimum <code>"obs"</code> and <code>"action"</code> keys). Created via <code>from_list()</code>. Supports <code>len()</code>, iteration.</p>
+<p><strong>TrajectoryBuffer</strong>: mutable, persistable. <code>export(path)</code> → pickle, <code>load(path)</code> → classmethod. <code>to_batch()</code> converts to TrajectoryBatch for <code>adapter.fit()</code>.</p>
+<p><strong>AdaptationConfig</strong> (frozen dataclass): serializable to dict/YAML/JSON. Fields: <code>obs_space</code>, <code>act_space</code>, <code>steps</code>, <code>checkpoint_interval_steps</code>, <code>checkpoint_dir</code>. Round-trips via <code>to_dict()</code> / <code>from_dict()</code> / <code>to_yaml()</code> / <code>from_yaml()</code>.</p>
+<p><strong>AdaptationRun</strong> (mutable dataclass): tracks live execution state. Fields: <code>config</code>, <code>current_step</code>, <code>checkpoint_paths</code>, <code>started_at</code>, <code>elapsed_seconds</code>.</p>
+<h3 id="corevalidationpy-invariant-system"><code>core/validation.py</code> — Invariant System</h3>
+<p><strong><code>register_invariant(adapter, name, fn, tolerance, mode)</code></strong>: attaches a callable <code>fn(trajectory: dict) -&gt; float</code> to an adapter's <code>_invariants</code> list. Validated eagerly at registration (signature check via <code>inspect</code>, mode and tolerance validation).</p>
+<ul>
+<li><code>mode="hard"</code> → filter trajectories with <code>fn(traj) &gt; tolerance</code> from training batch</li>
+<li><code>mode="soft"</code> → add <code>(residual - tolerance)</code> penalty to loss function per trajectory</li>
+</ul>
+<p><strong><code>ComplianceReport</code></strong>: pure data object (no side effects).
+- <code>summary()</code> → per-invariant PASS/FAIL string
+- <code>violations()</code> → sorted list of violation dicts
+- <code>plot(title, show_threshold)</code> → matplotlib histogram (lazy import)
+- <code>export(path)</code> → JSON file</p>
+<h3 id="adaptersdreamerpy-dreamerv3adapter"><code>adapters/dreamer.py</code> — DreamerV3Adapter</h3>
+<p><strong>Construction</strong> (<code>__init__</code>): validates <code>obs_space.dims ≥ 4</code>, <code>act_space.dims ≥ 1</code>.<br />
+<strong>Model</strong> (<code>_initialize_model</code>): 3 PyTorch <code>nn.Module</code> — <code>_WorldModel</code> (encoder + GRU + posterior + prior + decoder + reward_head), <code>_Actor</code>, <code>_Critic</code>. Hidden size = 256, latent = 256.</p>
+<p><strong><code>fit(trajectories, steps, checkpoint_interval_steps, debug_hooks, checkpoint_dir)</code></strong>:
+1. Validates parameters
+2. Resets training state (idempotent — safe to call multiple times)
+3. Applies registered invariants (hard filter + soft penalty)
+4. Pre-processes trajectories to tensors once
+5. Training loop with Adam optimizer (lr=3e-4), mixed precision (AMP), gradient clipping (max_norm=100)
+6. Saves safetensors checkpoint every <code>checkpoint_interval_steps</code>
+7. Returns <code>AdaptationRun</code></p>
+<p><strong><code>visualize(trajectories, output_path)</code></strong>: single-pass world model inference → triptych GIF via <code>render_triptych()</code>. Prints "Friday afternoon window" speedup vs 72h from-scratch baseline.</p>
+<p><strong><code>export(path)</code></strong>: copies triptych GIF, writes YAML config, writes summary.txt. Calls share panel (Colab clipboard copy or graceful fallback).</p>
+<p><strong><code>compliance_report()</code></strong>: reads <code>_invariants</code> + <code>_invariant_residuals</code> → <code>ComplianceReport</code>.</p>
+<p><strong>Checkpoint system</strong>:
+- Save: <code>safetensors.save_file()</code> with metadata dict (<code>physlink_version</code>, <code>adapter_class</code>, <code>timestamp</code>, <code>checkpoint_step</code>)
+- Load: <code>_check_checkpoint_metadata()</code> validates format and major.minor version compatibility before loading weights
+- Errors: <code>CheckpointCorruptError</code> (bad file), <code>CheckpointVersionError</code> (incompatible version)</p>
+<h3 id="utilsdiagnosticspy-doctor"><code>utils/diagnostics.py</code> — <code>doctor()</code></h3>
+<p>5 sequential checks, no torch import at module level:
+1. Python version ≥ 3.10
+2. PyTorch presence (via <code>importlib.util.find_spec</code>)
+3. CUDA availability (<code>torch.cuda.is_available()</code>)
+4. VRAM (WARN if &lt; 4 GB, OK if ≥ 4 GB)
+5. Colab session detection (env var or <code>google.colab</code> import)</p>
+<p>Returns <code>DiagnosticReport(checks, verdict="GO"|"NO-GO", elapsed_seconds)</code>. Prints formatted table to stdout. Target: &lt; 15 s on Colab T4.</p>
+<h3 id="utilsvisualizationpy-render_triptych"><code>utils/visualization.py</code> — <code>render_triptych()</code></h3>
+<p>3-panel matplotlib figure (Imagination | Real | Difference) saved as GIF via Pillow. All dims plotted as line series. Output: absolute path to saved file. From-scratch baseline constant: 72 hours (7-DOF arm, Colab T4).</p>
+<hr />
+<h2 id="data-flow">Data Flow</h2>
+<pre><code>User data (list[dict])
+    │
+    ▼ TrajectoryBatch.from_list() / TrajectoryBuffer.to_batch()
+TrajectoryBatch
+    │
+    ▼ DreamerV3Adapter._apply_invariants()
+filtered TrajectoryBatch (hard-mode violations removed)
+    │
+    ▼ DreamerV3Adapter.fit()
+AdaptationRun + checkpoint files (.safetensors)
+    │
+    ├── compliance_report() → ComplianceReport → summary/plot/export
+    │
+    └── visualize() → triptych GIF
+            │
+            └── export() → artifact bundle (GIF + YAML + summary.txt)
+</code></pre>
+<hr />
+<h2 id="testing-strategy">Testing Strategy</h2>
+<table>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Location</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit — core</td>
+<td><code>tests/unit/core/</code></td>
+<td>exceptions, spaces, types, validation</td>
+</tr>
+<tr>
+<td>Unit — adapters</td>
+<td><code>tests/unit/adapters/</code></td>
+<td>DreamerV3 CPU + GPU</td>
+</tr>
+<tr>
+<td>Unit — utils</td>
+<td><code>tests/unit/utils/</code></td>
+<td>diagnostics, visualization</td>
+</tr>
+<tr>
+<td>Integration</td>
+<td><code>tests/integration/</code></td>
+<td>API stability, CI config, docs infra, docstring completeness, GitHub templates, lab guide, README, toolchain compliance, domain scientist notebook</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td><code>tests/perf/</code></td>
+<td>NFR benchmarks vs baseline JSON</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Markers</strong>: <code>gpu</code> — excludes from CPU CI job. Run with <code>pytest -m "not gpu"</code> for CPU-only.</p>
+<p><strong>Fixture</strong>: <code>synthetic_trajectories</code> (conftest.py) — 1000 NumPy-only trajectories (7-dim obs, 3-dim action), seed 42.</p>
+<hr />
+<h2 id="cicd-pipeline">CI/CD Pipeline</h2>
+<pre><code>push/PR to main ──► test-cpu job
+                    ├── ruff check src/
+                    ├── mypy --strict src/physlink/core/
+                    └── pytest -m &quot;not gpu&quot; tests/ -v
+
+push/PR to main ──► docs job
+                    └── mkdocs build --strict
+
+push tag v* ──────► test-cpu → test-gpu (self-hosted T4)
+                    ├── pytest -m &quot;gpu&quot; tests/ -v
+                    └── pytest-benchmark --compare vs baseline (fail if &gt;10% regression)
+
+push tag v* ──────► publish job (environment: pypi)
+                    ├── validate notebook version pin
+                    ├── python -m build
+                    ├── pypa/gh-action-pypi-publish (OIDC — no stored token)
+                    └── smoke test: pip install physlink=={version}; import check
+</code></pre>
+<hr />
+<h2 id="key-design-decisions">Key Design Decisions</h2>
+<p><strong>No ML deps at import time</strong>: All torch imports are inside function bodies. <code>import physlink</code> works without PyTorch. Enables <code>doctor()</code> to diagnose missing torch.</p>
+<p><strong>Factory classmethods for spaces</strong>: Validation errors surface at construction time, not buried in training loops. <code>bool</code> check precedes <code>int</code> check in validators (bool is a subclass of int in Python).</p>
+<p><strong>Idempotent <code>fit()</code></strong>: <code>_reset_training_state()</code> runs at every <code>fit()</code> call. Safe to call multiple times without side effects from previous runs.</p>
+<p><strong><code>safetensors</code> for checkpoints</strong>: Safer than pickle (no arbitrary code execution). Metadata dict carries <code>physlink_version</code> for compatibility detection before loading weights.</p>
+<p><strong><code>Got/Expected/Fix</code> error messages</strong>: Every exception carries structured context usable by both humans and automated tooling.</p>
+<p><strong><code>type: ignore</code> only in ADR-documented locations</strong>: <code>adapters/</code> and <code>utils/</code> have relaxed mypy config (<code>ignore_missing_imports = true</code>) because PyTorch/matplotlib stubs are incomplete. <code>core/</code> is fully strict.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "toc.integrate", "search.suggest", "search.highlight", "content.code.copy", "navigation.top"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
