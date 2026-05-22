@@ -66,6 +66,15 @@ def test_story43_api_symbols() -> None:
     )
 
 
+def test_story44_api_symbols() -> None:
+    """Story 4.4 adds ComplianceReport to the public API (6 symbols total)."""
+    import physlink
+    assert "ComplianceReport" in physlink.__all__
+    assert hasattr(physlink, "ComplianceReport")
+    report = physlink.ComplianceReport(_stats=[], _violation_list=[])
+    assert isinstance(report, physlink.ComplianceReport)
+
+
 # DEPRECATION PROTOCOL (NFR-11):
 # When a public symbol or behaviour is deprecated, add a test here that:
 #   1. Calls the deprecated code path

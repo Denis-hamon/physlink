@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 from physlink.core.adapter import BaseAdapter
 from physlink.core.exceptions import ConfigurationError
 from physlink.core.spaces import ActionSpace, ObservationSpace
+from physlink.core.validation import ComplianceReport
 
 MIN_OBS_DIMS: int = 4   # DreamerV3 requires >= 4 observation dimensions
 MIN_ACT_DIMS: int = 1   # at least 1 action dimension required
@@ -438,6 +439,54 @@ class DreamerV3Adapter(BaseAdapter):
         self._soft_penalty_per_step = soft_surplus / max(len(data), 1)
 
         return TrajectoryBatch(data=filtered)
+
+    def compliance_report(self) -> ComplianceReport:
+        """Return a ComplianceReport summarizing invariant compliance from the last fit().
+
+        Reads ``_invariants`` and ``_invariant_residuals`` stored on the adapter.
+        Pure computation — no side effects, safe to call multiple times.
+
+        Returns:
+            ComplianceReport with per-invariant summary and violation details.
+            Empty report (no entries) if no invariants are registered.
+            Zero-trajectory report if fit() has not yet been called.
+
+        Example:
+            >>> register_invariant(adapter, "mass", fn, tolerance=0.01)
+            >>> adapter.fit(trajectories, steps=100)
+            >>> report = adapter.compliance_report()
+            >>> print(report.summary())
+            mass: PASS (max_residual=0.0042, threshold=0.0100, violations=0/10)
+        """
+        stats: list[dict[str, Any]] = []
+        violation_list: list[dict[str, Any]] = []
+
+        for inv in self._invariants:
+            residuals = self._invariant_residuals.get(inv.name, [])
+            max_residual = max(residuals) if residuals else 0.0
+            violation_count = sum(1 for r in residuals if r > inv.tolerance)
+            total = len(residuals)
+
+            stats.append({
+                "name": inv.name,
+                "max_residual": max_residual,
+                "threshold": inv.tolerance,
+                "violation_count": violation_count,
+                "total": total,
+            })
+
+            for idx, residual in enumerate(residuals):
+                if residual > inv.tolerance:
+                    violation_list.append({
+                        "invariant_name": inv.name,
+                        "trajectory_idx": idx,
+                        "residual": residual,
+                        "possible_cause": (
+                            f"Residual {residual:.4f} exceeds tolerance {inv.tolerance:.4f}."
+                        ),
+                    })
+
+        return ComplianceReport(_stats=stats, _violation_list=violation_list)
 
     def load_checkpoint(self, path: str) -> None:
         """Load model weights from a safetensors checkpoint.

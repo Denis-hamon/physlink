@@ -99,3 +99,87 @@ def register_invariant(
         )
     _validate_fn_signature(fn, name)
     adapter._invariants.append(_InvariantRecord(name=name, fn=fn, tolerance=tolerance, mode=mode))
+
+
+class ComplianceReport:
+    """Pure data object summarizing invariant compliance across adaptation trajectories.
+
+    Constructed by ``DreamerV3Adapter.compliance_report()`` after ``fit()`` is called.
+    All methods are deterministic and side-effect-free (NFR-13).
+
+    Args:
+        _stats: Per-invariant summary dicts with keys:
+            ``name`` (str), ``max_residual`` (float), ``threshold`` (float),
+            ``violation_count`` (int), ``total`` (int).
+        _violation_list: Per-violation dicts with keys:
+            ``invariant_name`` (str), ``trajectory_idx`` (int),
+            ``residual`` (float), ``possible_cause`` (str).
+
+    Example:
+        >>> report = adapter.compliance_report()
+        >>> print(report.summary())
+        mass_conservation: PASS (max_residual=0.0042, threshold=0.0100, violations=0/50)
+        >>> violations = report.violations()
+        >>> violations  # empty list when no violations
+        []
+    """
+
+    def __init__(
+        self,
+        _stats: list[dict[str, Any]],
+        _violation_list: list[dict[str, Any]],
+    ) -> None:
+        self._stats: list[dict[str, Any]] = list(_stats)
+        self._violation_list: list[dict[str, Any]] = list(_violation_list)
+
+    def summary(self) -> str:
+        """Return a human-readable compliance summary string.
+
+        One line per invariant in format:
+        ``"name: PASS (max_residual=X.XXXX, threshold=Y.YYYY, violations=Z/N)"``
+
+        Returns:
+            Formatted summary string. Empty string if no invariants registered.
+            Multiple invariants produce one line each, joined with newline.
+
+        Example:
+            >>> report = ComplianceReport(
+            ...     _stats=[{"name": "mass", "max_residual": 0.0, "threshold": 0.01,
+            ...               "violation_count": 0, "total": 5}],
+            ...     _violation_list=[],
+            ... )
+            >>> report.summary()
+            'mass: PASS (max_residual=0.0000, threshold=0.0100, violations=0/5)'
+        """
+        lines = []
+        for s in self._stats:
+            status = "PASS" if s["violation_count"] == 0 else "FAIL"
+            lines.append(
+                f"{s['name']}: {status} ("
+                f"max_residual={s['max_residual']:.4f}, "
+                f"threshold={s['threshold']:.4f}, "
+                f"violations={s['violation_count']}/{s['total']})"
+            )
+        return "\n".join(lines)
+
+    def violations(self) -> list[dict[str, Any]]:
+        """Return a list of all invariant violations detected during fit().
+
+        Returns:
+            List of violation dicts, each containing:
+            - ``invariant_name`` (str): Name of the violated invariant.
+            - ``trajectory_idx`` (int): 0-based index of the violating trajectory.
+            - ``residual`` (float): The residual value that exceeded tolerance.
+            - ``possible_cause`` (str): Human-readable diagnostic message.
+            Sorted by ``(invariant_name, trajectory_idx)`` for determinism.
+            Empty list when no violations occurred.
+
+        Example:
+            >>> report = ComplianceReport(_stats=[], _violation_list=[])
+            >>> report.violations()
+            []
+        """
+        return sorted(
+            list(self._violation_list),
+            key=lambda v: (v["invariant_name"], v["trajectory_idx"]),
+        )

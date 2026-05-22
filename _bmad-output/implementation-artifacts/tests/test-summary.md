@@ -1,3 +1,67 @@
+# Test Automation Summary — Story 4.4: ComplianceReport Summary and Violations
+
+**Date:** 2026-05-22
+**Framework:** pytest 9.0.3 / Python 3.12.1
+**Story file:** `_bmad-output/implementation-artifacts/4-4-compliancereport-summary-and-violations.md`
+
+---
+
+## Generated / Updated Tests
+
+### Unit Tests — `tests/unit/core/test_validation.py` (+8 nouveaux tests de gap)
+
+**`TestComplianceReportMultiInvariant`** (2 tests ajoutés à la classe existante)
+- [x] `test_summary_lines_in_insertion_order` — lignes de `summary()` dans l'ordre d'insertion `_stats`
+- [x] `test_violations_total_count_across_invariants` — compte total violations multi-invariants
+
+**`TestComplianceReportDefensiveCopy`** (nouvelle classe — 3 tests)
+- [x] `test_stats_mutation_after_construction_does_not_affect_summary` — copie défensive de `_stats`
+- [x] `test_violation_list_mutation_after_construction_does_not_affect_violations` — copie défensive de `_violation_list`
+- [x] `test_violations_returns_new_list_each_call` — `violations()` retourne une nouvelle liste à chaque appel
+
+**`TestComplianceReportSortingOrder`** (nouvelle classe — 2 tests)
+- [x] `test_violations_sorted_by_invariant_name_then_idx` — ordre exact `(invariant_name, trajectory_idx)` multi-invariants
+- [x] `test_violations_same_invariant_sorted_by_idx` — tri par `trajectory_idx` pour un même invariant
+
+**`TestComplianceReportPossibleCause`** (nouvelle classe — 1 test)
+- [x] `test_violations_possible_cause_is_nonempty_string` — `possible_cause` est une str non vide
+
+### Unit Tests — `tests/unit/adapters/test_dreamer_cpu.py` (+2 nouveaux tests de gap)
+
+**`TestComplianceReportStory44`** (2 tests ajoutés)
+- [x] `test_compliance_report_possible_cause_contains_diagnostic_text` — `possible_cause` contient "Residual", "tolerance", pas "Traceback"
+- [x] `test_compliance_report_violations_sorted_by_invariant_then_idx` — tri correct sur données réelles de `fit()`
+
+## Coverage
+
+| Fichier | Tests story spec | Tests gap (nouveaux) | Total story 4.4 |
+|---------|----------------|----------------------|-------|
+| `test_validation.py` | 16 | 8 | 24 |
+| `test_dreamer_cpu.py::TestComplianceReportStory44` | 8 | 2 | 10 |
+| `test_api_stability.py::test_story44_api_symbols` | 1 | 0 | 1 |
+| **Total Story 4.4** | **25** | **10** | **35** |
+
+## Gaps couverts
+
+| Gap | Tests ajoutés |
+|-----|---------------|
+| Copie défensive `__init__` | `TestComplianceReportDefensiveCopy` (3 tests) |
+| Ordre de tri explicite `violations()` | `TestComplianceReportSortingOrder` (2 tests) |
+| Contenu diagnostique `possible_cause` | `TestComplianceReportPossibleCause` + `test_compliance_report_possible_cause_contains_diagnostic_text` |
+| Ordre d'insertion lignes `summary()` | `test_summary_lines_in_insertion_order` |
+| Compte total violations multi-invariants | `test_violations_total_count_across_invariants` |
+| Tri sur données réelles adaptateur | `test_compliance_report_violations_sorted_by_invariant_then_idx` |
+
+## Test Run Results
+
+```
+698 passed, 3 skipped, 18 deselected in 7.18s
+```
+
+Zéro régression. Tous les 10 nouveaux tests de gap passent.
+
+---
+
 # Test Automation Summary — Story 4.1: AdaptationConfig and AdaptationRun
 
 **Date:** 2026-05-22

@@ -1639,3 +1639,127 @@ class TestRegisterInvariantIdempotenceStory43:
         second_residuals = adapter._invariant_residuals["mass"]
         # second call must not accumulate on top of first — same length
         assert len(second_residuals) == len(first_residuals)
+
+
+class TestComplianceReportStory44:
+    """Story 4.4 — compliance_report() on DreamerV3Adapter (AC: #1, #2, #3, #4)."""
+
+    def test_compliance_report_returns_compliance_report(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant, ComplianceReport
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "mass", lambda t: 0.0, tolerance=0.01, mode="soft")
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        assert isinstance(adapter.compliance_report(), ComplianceReport)
+
+    def test_compliance_report_no_side_effects(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "mass", lambda t: 0.0, tolerance=0.01, mode="soft")
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        report1 = adapter.compliance_report()
+        report2 = adapter.compliance_report()
+        assert report1.summary() == report2.summary()
+        assert report1.violations() == report2.violations()
+
+    def test_compliance_report_pass_when_no_violations(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "zero_inv", lambda t: 0.0, tolerance=0.01, mode="soft")
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        assert "PASS" in report.summary()
+
+    def test_compliance_report_fail_when_violations(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        # residual=1.0 > tolerance=0.01, soft mode so no rejection
+        register_invariant(adapter, "high_inv", lambda t: 1.0, tolerance=0.01, mode="soft")
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        assert "FAIL" in report.summary()
+
+    def test_compliance_report_violations_list_non_empty_on_fail(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "violated", lambda t: 1.0, tolerance=0.01, mode="soft")
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        assert len(report.violations()) > 0
+
+    def test_compliance_report_no_invariants_empty_report(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import ComplianceReport
+
+        adapter = _make_adapter_43()
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        assert isinstance(report, ComplianceReport)
+        assert report.summary() == ""
+        assert report.violations() == []
+
+    def test_compliance_report_before_fit_no_error(self) -> None:
+        from physlink.core.validation import register_invariant, ComplianceReport
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "mass", lambda t: 0.0, tolerance=0.01, mode="soft")
+        # No fit() called — should return empty-zero report, not crash
+        report = adapter.compliance_report()
+        assert isinstance(report, ComplianceReport)
+        summary = report.summary()
+        assert "violations=0/0" in summary
+
+    def test_compliance_report_hard_mode_violations_tracked(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        # keep index 0 (obs[0]=0.0 <= 4.0), reject indices 5-9
+        register_invariant(
+            adapter, "hard_inv", lambda t: float(t["obs"][0]), tolerance=4.0, mode="hard"
+        )
+        adapter.fit(_make_trajectories_43(10), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        # residuals stored for all 10 trajectories before filtering
+        violations = report.violations()
+        # trajectories with obs[0] > 4.0 (indices 5-9) should be violations
+        assert len(violations) > 0
+        assert all(v["invariant_name"] == "hard_inv" for v in violations)
+
+    def test_compliance_report_possible_cause_contains_diagnostic_text(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "high_inv", lambda t: 1.0, tolerance=0.01, mode="soft")
+        adapter.fit(_make_trajectories_43(3), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        for v in report.violations():
+            cause = v["possible_cause"]
+            assert isinstance(cause, str)
+            assert "Residual" in cause
+            assert "tolerance" in cause
+            assert "Traceback" not in cause
+
+    def test_compliance_report_violations_sorted_by_invariant_then_idx(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "zzz_inv", lambda t: 1.0, tolerance=0.01, mode="soft")
+        register_invariant(adapter, "aaa_inv", lambda t: 1.0, tolerance=0.01, mode="soft")
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        violations = report.violations()
+        assert len(violations) > 0
+        names = [v["invariant_name"] for v in violations]
+        assert names == sorted(names), "violations() must be sorted by invariant_name"
