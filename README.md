@@ -11,6 +11,8 @@
   <a href="https://colab.research.google.com/github/YOUR-ORG/physlink/blob/main/notebooks/quickstart.ipynb"><strong>Quick Start →</strong></a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <a href="docs/lab-adoption-guide.md"><strong>Evaluate for your lab →</strong></a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="docs/domain-scientists.md"><strong>For Domain Scientists →</strong></a>
 </p>
 
 Backend-agnostic adapter library for physical simulation ML.

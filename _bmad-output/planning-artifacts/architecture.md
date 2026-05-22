@@ -529,7 +529,9 @@ physlink/
 │   │   ├── ci.yml                        # test-cpu (gate PRs) + test-gpu (gate releases)
 │   │   └── publish.yml                   # PyPI OIDC Trusted Publisher
 │   ├── ISSUE_TEMPLATE/
-│   │   └── domain_extension.md           # DD-002: template PR communauté
+│   │   ├── bug_report.md                 # Template rapport de bug (Story 5.3)
+│   │   ├── feature_request.md            # Template demande de feature (Story 5.3)
+│   │   └── domain_extension.md           # DD-002: template PR communauté (Samuel DD-003)
 │   └── PULL_REQUEST_TEMPLATE.md          # checklist CHANGELOG + invariants
 │
 ├── src/
@@ -603,7 +605,7 @@ physlink/
 
 ```
 physlink.core/     →  physlink.core/        ✅ OK — intra-core
-physlink.core/     →  physlink.adapters/    ❌ INTERDIT (test_core_boundary.py)
+physlink.core/     →  physlink.adapters/    ❌ INTERDIT (test_core_boundary.py — AST walk, catches even TYPE_CHECKING imports)
 physlink.adapters/ →  physlink.core/        ✅ OK
 physlink.utils/    →  physlink.core/        ✅ OK
 physlink.utils/    →  physlink.adapters/    ❌ INTERDIT (utils indépendants)
@@ -612,6 +614,34 @@ utils/diagnostics  →  (rien)               ✅ Zéro dépendance ML — FR-01
 ```
 
 **Règle critique `doctor()`:** `utils/diagnostics.py` ne peut importer aucun module physlink hormis `core.exceptions`. Hugo quitte si `physlink.doctor()` plante parce que PyTorch n'est pas installé.
+
+**Règle `core/ → adapters/` — Pattern canonique (Protocol) :**
+
+`test_core_boundary.py` utilise un AST walk qui capture **tous** les imports de `adapters/` dans `core/`, y compris les imports sous `if TYPE_CHECKING:`. Une tentative de contournement via `TYPE_CHECKING` échoue.
+
+Solution canonique : définir un **Protocol** dans `core/` qui duck-type l'interface minimale requise de l'adapter.
+
+```python
+# ✅ Correct — dans core/validation.py
+from typing import Any, Protocol
+
+class _HasInvariants(Protocol):
+    """Protocol for adapters that accept registered invariants."""
+    _invariants: list[Any]
+
+def register_invariant(adapter: _HasInvariants, ...) -> None:
+    # Aucun import de adapters/ requis — duck-typing via Protocol
+    adapter._invariants.append(...)
+```
+
+```python
+# ❌ Interdit — même dans TYPE_CHECKING
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from physlink.adapters.dreamer import DreamerV3Adapter  # Caught by AST walk
+```
+
+Ce pattern (`_HasInvariants` Protocol dans `core/validation.py`) est l'exemple canonique établi en Story 4.3. Toute future interaction `core/ → adapters/` doit suivre ce modèle.
 
 ### Integration Points
 
@@ -688,7 +718,7 @@ Publish → pypa/gh-action-pypi-publish (OIDC Trusted Publisher)
 
 **Gaps importants (déférés, non bloquants) :**
 - `ExplainableMixin` — `.explain()` cross-cutting concern → `core/_mixins.py` à créer
-- `TrajectoryBuffer.export(path)` / `.load(path)` (DD-002) → à ajouter dans `core/_types.py` ou `utils/io.py`
+- `TrajectoryBuffer.export(path)` / `.load(path)` (DD-002) → ✅ IMPLEMENTED in `core/_types.py` (Story 4.2); post-v0.1 refactor to `utils/io.py` remains optional
 - `AdaptationConfig` schéma YAML — format de sérialisation non spécifié → décision à l'implémentation
 
 **Gaps mineurs :**
@@ -735,7 +765,7 @@ Publish → pypa/gh-action-pypi-publish (OIDC Trusted Publisher)
 
 **Axes d'amélioration post-v0.1 :**
 - `ExplainableMixin` dans `core/_mixins.py`
-- `TrajectoryBuffer` I/O dans `utils/io.py`
+- `TrajectoryBuffer` I/O refactor from `core/_types.py` to `utils/io.py` (currently in `core/_types.py` — functional, refactor optional)
 - mypy strict sur `adapters/` — ADR-002 milestone v0.3.0
 - GPU CI automatisé après premier external contributor merged
 
