@@ -50,7 +50,7 @@ mass_conservation: PASS (max_residual=0.007, threshold=0.01, violations=0/1000)
 
 Run the worked example end-to-end in Google Colab — no local install required:
 
-**[Open Domain Scientist Colab →](https://colab.research.google.com/github/YOUR-ORG/physlink/blob/main/notebooks/domain-scientist-colab.ipynb)**
+**[Open Domain Scientist Colab →](https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/domain-scientist-colab.ipynb)**
 
 The notebook walks through the full Samuel path: configure spaces, attach `mass_conservation`, run adaptation, and inspect the ComplianceReport in an interactive environment.
 

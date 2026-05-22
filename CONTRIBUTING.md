@@ -7,7 +7,7 @@ maintainer runs this manually before each release:
 
 1. Run on a Google Colab T4 instance:
    ```
-   git clone https://github.com/<owner>/physlink.git && cd physlink
+   git clone https://github.com/Denis-hamon/physlink.git && cd physlink
    pip install -e ".[dev]"
    pip install torch --extra-index-url https://download.pytorch.org/whl/cu121
    pytest -m "gpu" tests/ -v
@@ -35,7 +35,7 @@ PR is merged. Until then, maintainer-run Colab T4 tests are the gate.
 Before the first release, configure a Trusted Publisher on PyPI:
 1. Log in to pypi.org → project settings → Publishing → Add a new pending publisher
 2. Enter:
-   - Owner: `<github-username-or-org>`
+   - Owner: `Denis-hamon`
    - Repository: `physlink`
    - Workflow filename: `publish.yml`
    - Environment name: `pypi`
@@ -55,4 +55,3 @@ For each release:
 
 **Important:** Ensure `test-cpu` CI passes on the release commit before pushing the tag.
 
-<!-- TODO: replace YOUR-ORG in README.md badge URLs with the actual GitHub username/org once the remote is configured (`git remote get-url origin`). -->

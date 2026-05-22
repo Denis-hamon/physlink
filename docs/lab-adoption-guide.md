@@ -99,13 +99,13 @@ Petra cannot run the T4 GPU tests herself. Two resources verify the published nu
 GPU access:
 
 1. **Committed baseline JSON** (always present in the repository):
-   [`tests/perf/baselines/benchmark_baseline.json`](../tests/perf/baselines/benchmark_baseline.json)
+   `tests/perf/baselines/benchmark_baseline.json`
    — annotated with `"hardware": "T4 GPU"` and the NFR thresholds
    (`doctor()` < 15 s, `compliance_report()` < 30 s).
 
 2. **GitHub Actions CI badge** (live status):
 
-   [![GPU Benchmarks](https://github.com/YOUR-ORG/physlink/actions/workflows/test-gpu.yml/badge.svg)](https://github.com/YOUR-ORG/physlink/actions/workflows/test-gpu.yml)
+   [![GPU Benchmarks](https://github.com/Denis-hamon/physlink/actions/workflows/test-gpu.yml/badge.svg)](https://github.com/Denis-hamon/physlink/actions/workflows/test-gpu.yml)
 
    Click the badge to see the latest release-validation run on T4 hardware.
 
@@ -118,9 +118,9 @@ If you use PhysLink in your research, please cite it using the following BibTeX 
 ```bibtex
 @software{physlink2026,
   title   = {{PhysLink}: Backend-Agnostic Adapter Library for Physical Simulation {ML}},
-  author  = {YOUR-ORG},
+  author  = {Hamon, Denis},
   year    = {2026},
-  url     = {https://github.com/YOUR-ORG/physlink},
+  url     = {https://github.com/Denis-hamon/physlink},
   version = {0.1.2}
 }
 ```
@@ -131,6 +131,6 @@ If you use PhysLink in your research, please cite it using the following BibTeX 
 
 PhysLink is released under the **MIT License** — no restrictions on academic or commercial use.
 
-- [GitHub Issues](https://github.com/YOUR-ORG/physlink/issues) — bug reports and feature requests
+- [GitHub Issues](https://github.com/Denis-hamon/physlink/issues) — bug reports and feature requests
 - [API Reference](api/index.md) — full technical documentation
 - [Changelog](changelog.md) — release history

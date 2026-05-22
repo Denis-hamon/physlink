@@ -1,8 +1,8 @@
 site_name: PhysLink
 site_description: Backend-agnostic adapter library for physical simulation ML
-site_url: https://YOUR-ORG.github.io/physlink/
-repo_url: https://github.com/YOUR-ORG/physlink
-repo_name: YOUR-ORG/physlink
+site_url: https://Denis-hamon.github.io/physlink/
+repo_url: https://github.com/Denis-hamon/physlink
+repo_name: Denis-hamon/physlink
 edit_uri: edit/main/docs/
 
 theme:
@@ -43,6 +43,12 @@ nav:
   - API Reference: api/index.md
   - Changelog: changelog.md
   - Lab Adoption Guide: lab-adoption-guide.md
+  - Developer:
+    - Architecture: architecture.md
+    - Source Tree: source-tree-analysis.md
+    - Development Guide: development-guide.md
+    - Deployment Guide: deployment-guide.md
+    - Contribution Guide: contribution-guide.md
 
 extra:
   version:

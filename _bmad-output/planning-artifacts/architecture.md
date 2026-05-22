@@ -571,11 +571,27 @@ physlink/
 │   ├── integration/
 │   │   ├── test_core_no_torch_import.py  # AST walk core/ — invariant backend-agnostique
 │   │   ├── test_core_boundary.py         # core/ ne peut pas importer adapters/
-│   │   └── test_api_stability.py         # surface publique __init__ stable
+│   │   ├── test_api_stability.py         # surface publique __init__ stable
+│   │   ├── test_ci_pipeline_config.py    # CI workflow YAML structure
+│   │   ├── test_publish_workflow_config.py  # PyPI publish workflow
+│   │   ├── test_docs_infrastructure.py   # MkDocs config, mkdocs.yml
+│   │   ├── test_docstring_completeness.py  # public API docstring coverage
+│   │   ├── test_toolchain_compliance.py  # ruff/mypy config in pyproject.toml
+│   │   ├── test_readme_content.py        # README badges + action bar (Epic 1.6)
+│   │   ├── test_changelog_content.py     # CHANGELOG.md format, 3 releases (Epic 5.1)
+│   │   ├── test_lab_adoption_guide.py    # Lab Adoption Guide content (Epic 5.2)
+│   │   ├── test_github_templates.py      # PR + issue templates (Epic 5.3)
+│   │   ├── test_readme_domain_scientist_link.py  # "For Domain Scientists →" link (Epic 6.1)
+│   │   ├── test_domain_scientists_page.py  # domain-scientists.md content (Epic 6.2)
+│   │   └── test_domain_scientist_notebook.py  # Colab notebook structure (Epic 6.3)
 │   └── perf/
 │       ├── baselines/
 │       │   └── benchmark_baseline.json   # committé — référence NFR
 │       └── test_nfr_benchmarks.py        # compliance_report() <30s, doctor() <15s
+│
+├── notebooks/
+│   ├── quickstart.ipynb                  # DD-001: Hugo path — Quick Start (Epic 1.6)
+│   └── domain-scientist-colab.ipynb      # DD-003: Samuel path — 8-cell compliance validation (Epic 6.3)
 │
 └── docs/
     ├── index.md
@@ -600,6 +616,10 @@ physlink/
 | Invariant AST backend | — | `tests/integration/test_core_no_torch_import.py` |
 | Boundary core→adapters | — | `tests/integration/test_core_boundary.py` |
 | NFR benchmarks | — | `tests/perf/test_nfr_benchmarks.py` |
+| DD-002 Institutional trust (CHANGELOG, Lab Guide, GitHub templates) | `CHANGELOG.md`, `docs/lab-adoption-guide.md`, `.github/` | `tests/integration/test_changelog_content.py`, `test_lab_adoption_guide.py`, `test_github_templates.py` |
+| DD-003 Domain scientist entry point (README link) | `README.md` | `tests/integration/test_readme_domain_scientist_link.py` |
+| DD-003 Domain scientist landing page | `docs/domain-scientists.md` | `tests/integration/test_domain_scientists_page.py` |
+| DD-003 Samuel Colab notebook | `notebooks/domain-scientist-colab.ipynb` | `tests/integration/test_domain_scientist_notebook.py` |
 
 ### Architectural Boundaries
 
