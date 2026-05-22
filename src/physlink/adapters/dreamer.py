@@ -321,6 +321,9 @@ class DreamerV3Adapter(BaseAdapter):
         self._fit_elapsed_seconds: float | None = None
         self._triptych_path: str | None = None
         self._last_checkpoint_path: str | None = None
+        self._invariants: list = []
+        self._invariant_residuals: dict[str, list[float]] = {}
+        self._soft_penalty_per_step: float = 0.0
 
     def _initialize_model(self, device: Any) -> None:  # noqa: ANN401
         import torch.nn as nn
@@ -381,6 +384,60 @@ class DreamerV3Adapter(BaseAdapter):
         """Reset all mutable training state for a fresh fit() run (NFR-09)."""
         self._loss_history = []
         self._baseline_loss = None
+        self._invariant_residuals = {}
+        self._soft_penalty_per_step = 0.0
+
+    def _apply_invariants(self, trajectories: TrajectoryBatch) -> TrajectoryBatch:
+        """Apply registered invariants: filter hard-mode violations, compute soft penalty."""
+        if not self._invariants:
+            return trajectories
+
+        from physlink.core.exceptions import ValidationError
+
+        data = trajectories.data
+        for inv in self._invariants:
+            self._invariant_residuals[inv.name] = []
+
+        hard_mask: list[bool] = [True] * len(data)
+
+        for inv in self._invariants:
+            for idx, traj in enumerate(data):
+                try:
+                    residual = float(inv.fn(traj))
+                except Exception as exc:
+                    print(
+                        f"[physlink] Invariant '{inv.name}' failed on trajectory {idx}: "
+                        f"{type(exc).__name__} — treating residual as 0.0"
+                    )
+                    residual = 0.0
+                self._invariant_residuals[inv.name].append(residual)
+
+                if inv.mode == "hard" and residual > inv.tolerance:
+                    hard_mask[idx] = False
+                    print(
+                        f"[physlink] Invariant '{inv.name}' rejected trajectory {idx}: "
+                        f"residual={residual:.4f} > tolerance={inv.tolerance}"
+                    )
+
+        filtered = [d for d, keep in zip(data, hard_mask) if keep]
+        if not filtered:
+            raise ValidationError(
+                f"register_invariant (hard mode): all {len(data)} trajectories rejected.\n"
+                f"  Got:      0 trajectories remaining after hard-mode invariant filtering\n"
+                f"  Expected: at least 1 trajectory passing all hard-mode invariants\n"
+                f"  Fix:      lower tolerance, fix the invariant function, "
+                f"or switch to mode='soft'."
+            )
+
+        soft_surplus = 0.0
+        for inv in self._invariants:
+            if inv.mode == "soft":
+                for r in self._invariant_residuals[inv.name]:
+                    if r > inv.tolerance:
+                        soft_surplus += r - inv.tolerance
+        self._soft_penalty_per_step = soft_surplus / max(len(data), 1)
+
+        return TrajectoryBatch(data=filtered)
 
     def load_checkpoint(self, path: str) -> None:
         """Load model weights from a safetensors checkpoint.
@@ -463,7 +520,7 @@ class DreamerV3Adapter(BaseAdapter):
         b_size, t_steps, obs_d = obs_seq.shape
         gru_hidden = self._model.gru.hidden_size
 
-        with torch.cuda.amp.autocast(enabled=(device.type == "cuda")):
+        with torch.amp.autocast("cuda", enabled=(device.type == "cuda")):
             h_state = torch.zeros(b_size, gru_hidden, device=device)
             latents: list[Any] = []
             kl_losses: list[Any] = []
@@ -540,7 +597,7 @@ class DreamerV3Adapter(BaseAdapter):
             critic_val = self._critic.net(critic_in)
             critic_loss = nn.functional.mse_loss(critic_val, returns.detach())
 
-            total_loss = wm_loss + actor_loss + critic_loss
+            total_loss = wm_loss + actor_loss + critic_loss + self._soft_penalty_per_step
 
         return total_loss
 
@@ -614,10 +671,14 @@ class DreamerV3Adapter(BaseAdapter):
                 f"  Fix:      provide a positive integer, e.g. checkpoint_interval_steps=1000."
             )
 
+        self._reset_training_state()
+
         if isinstance(trajectories, TrajectoryBuffer):
             trajectories = trajectories.to_batch()
         if isinstance(trajectories, list):
             trajectories = TrajectoryBatch.from_list(trajectories)
+
+        trajectories = self._apply_invariants(trajectories)
 
         import torch
 
@@ -625,8 +686,6 @@ class DreamerV3Adapter(BaseAdapter):
 
         if self._model is None:
             self._initialize_model(device)
-
-        self._reset_training_state()
 
         # Pre-process trajectory data to tensors once
         raw_data = trajectories.data
@@ -657,7 +716,7 @@ class DreamerV3Adapter(BaseAdapter):
             + list(self._critic.parameters())
         )
         optimizer = torch.optim.Adam(all_params, lr=3e-4)
-        scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
+        scaler = torch.amp.GradScaler("cuda", enabled=(device.type == "cuda"))
 
         _fit_start_time = time.monotonic()
         _run_checkpoint_paths: list[str] = []

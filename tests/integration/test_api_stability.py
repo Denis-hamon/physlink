@@ -48,6 +48,24 @@ def test_epic3_api_symbols() -> None:
     )
 
 
+def test_story43_api_symbols() -> None:
+    """Story 4.3: register_invariant added to public API."""
+    import physlink
+    from physlink import register_invariant  # noqa: F401 — import test
+
+    expected = {
+        "doctor", "ObservationSpace", "ActionSpace", "PhysLinkError",
+        "DreamerV3Adapter", "register_invariant",
+    }
+    actual = set(physlink.__all__)
+    assert expected.issubset(actual), (
+        f"Story 4.3 API surface mismatch.\n"
+        f"  Missing: {expected - actual}\n"
+        f"  Got:     {sorted(actual)}\n"
+        f"  Fix:     add missing symbols to physlink.__all__ in src/physlink/__init__.py"
+    )
+
+
 # DEPRECATION PROTOCOL (NFR-11):
 # When a public symbol or behaviour is deprecated, add a test here that:
 #   1. Calls the deprecated code path

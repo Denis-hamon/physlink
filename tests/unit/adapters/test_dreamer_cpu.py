@@ -587,6 +587,28 @@ class TestResetTrainingState:
         adapter._reset_training_state()
         assert adapter._baseline_loss is None
 
+    def test_reset_clears_invariant_residuals(self) -> None:
+        """Story 4.3: _reset_training_state() must reset _invariant_residuals (NFR-09)."""
+        from physlink import DreamerV3Adapter
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        adapter._invariant_residuals = {"mass": [0.1, 0.2, 0.3]}
+        adapter._reset_training_state()
+        assert adapter._invariant_residuals == {}
+
+    def test_reset_clears_soft_penalty_per_step(self) -> None:
+        """Story 4.3: _reset_training_state() must reset _soft_penalty_per_step (NFR-09)."""
+        from physlink import DreamerV3Adapter
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        adapter._soft_penalty_per_step = 42.5
+        adapter._reset_training_state()
+        assert adapter._soft_penalty_per_step == 0.0
+
     def test_validation_error_does_not_corrupt_state(
         self, synthetic_trajectories: list[dict]
     ) -> None:
@@ -1053,6 +1075,21 @@ class TestDreamerV3AdapterStory35State:
         adapter._reset_training_state()
         assert adapter._last_checkpoint_path == "/fake/checkpoint_step_10000.safetensors"
 
+    def test_invariants_list_empty_after_construction(self) -> None:
+        """Story 4.3: _invariants must be an empty list on a freshly constructed adapter."""
+        adapter = self._make_adapter()
+        assert adapter._invariants == []
+
+    def test_invariant_residuals_empty_after_construction(self) -> None:
+        """Story 4.3: _invariant_residuals must be an empty dict on a freshly constructed adapter."""
+        adapter = self._make_adapter()
+        assert adapter._invariant_residuals == {}
+
+    def test_soft_penalty_per_step_zero_after_construction(self) -> None:
+        """Story 4.3: _soft_penalty_per_step must be 0.0 on a freshly constructed adapter."""
+        adapter = self._make_adapter()
+        assert adapter._soft_penalty_per_step == 0.0
+
 
 class TestVisualizeFridayCallout:
     """AC #1: Friday afternoon window callout logic verified via source inspection — CPU-safe."""
@@ -1435,3 +1472,170 @@ class TestFitWithTrajectoryBufferStory42:
         from physlink.adapters.dreamer import DreamerV3Adapter
         source = inspect.getsource(DreamerV3Adapter.visualize)
         assert "isinstance(trajectories, TrajectoryBuffer)" in source
+
+
+# ---------------------------------------------------------------------------
+# Story 4.3 — register_invariant() integration tests (CPU / GPU agnostic)
+# ---------------------------------------------------------------------------
+
+def _make_adapter_43() -> "DreamerV3Adapter":
+    from physlink import DreamerV3Adapter
+    obs = ObservationSpace.from_proprioception(joints=7)
+    act = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+    return DreamerV3Adapter(obs, act)
+
+
+def _make_trajectories_43(n: int = 10) -> list[dict]:
+    return [{"obs": [float(i)] * 7, "action": [0.0] * 7} for i in range(n)]
+
+
+class TestRegisterInvariantHardModeStory43:
+    """AC #2 — hard mode filtering during fit()."""
+
+    def test_hard_mode_rejects_violating_trajectory_raises(self) -> None:
+        from physlink.core.validation import register_invariant
+        from physlink.core.exceptions import ValidationError
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "always_high", lambda t: 1.0, tolerance=0.5, mode="hard")
+        with pytest.raises(ValidationError):
+            adapter.fit(_make_trajectories_43(), steps=1)
+
+    def test_hard_mode_all_rejected_error_has_got_expected_fix(self) -> None:
+        """AC #2: the ValidationError for all-rejected must follow Got/Expected/Fix format."""
+        from physlink.core.exceptions import ValidationError
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "always_high", lambda t: 1.0, tolerance=0.5, mode="hard")
+        with pytest.raises(ValidationError) as exc_info:
+            adapter.fit(_make_trajectories_43(), steps=1)
+        msg = str(exc_info.value)
+        assert "Got:" in msg
+        assert "Expected:" in msg
+        assert "Fix:" in msg
+
+    def test_hard_mode_keeps_passing_trajectory(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "always_zero", lambda t: 0.0, tolerance=0.5, mode="hard")
+        adapter.fit(_make_trajectories_43(), steps=2, checkpoint_interval_steps=10)
+
+    def test_hard_mode_partial_rejection(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        # reject trajectories where obs[0] > 4 (indices 5-9), keep indices 0-4
+        register_invariant(
+            adapter, "low_obs", lambda t: float(t["obs"][0]), tolerance=4.0, mode="hard"
+        )
+        adapter.fit(_make_trajectories_43(10), steps=2, checkpoint_interval_steps=10)
+        # residuals stored for all 10 trajectories
+        assert len(adapter._invariant_residuals["low_obs"]) == 10
+
+    def test_hard_mode_logs_diagnostic(self, capsys: pytest.CaptureFixture) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        # reject trajectories where obs[0] > 0 (indices 1-9), keep index 0
+        register_invariant(
+            adapter, "strict_zero", lambda t: float(t["obs"][0]), tolerance=0.0, mode="hard"
+        )
+        adapter.fit(_make_trajectories_43(10), steps=2, checkpoint_interval_steps=10)
+        captured = capsys.readouterr()
+        assert "strict_zero" in captured.out
+        assert "rejected" in captured.out
+
+    def test_hard_mode_residuals_stored(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "mass", lambda t: 0.0, tolerance=0.5, mode="hard")
+        adapter.fit(_make_trajectories_43(10), steps=2, checkpoint_interval_steps=10)
+        assert "mass" in adapter._invariant_residuals
+        assert len(adapter._invariant_residuals["mass"]) == 10
+
+    def test_fn_exception_treated_as_zero_residual(self, capsys: pytest.CaptureFixture) -> None:
+        """fn that raises during _apply_invariants must not crash fit(); residual treated as 0.0."""
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+
+        def exploding(t: dict) -> float:
+            raise RuntimeError("simulated fn crash")
+
+        register_invariant(adapter, "exploding", exploding, tolerance=0.5, mode="hard")
+        # hard mode, fn explodes → residual=0.0 < tolerance=0.5, so no trajectories rejected
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        captured = capsys.readouterr()
+        assert "exploding" in captured.out
+        assert "treating residual as 0.0" in captured.out
+        # All residuals stored as 0.0
+        assert all(r == 0.0 for r in adapter._invariant_residuals["exploding"])
+
+
+class TestRegisterInvariantSoftModeStory43:
+    """AC #3 — soft mode keeps all trajectories, penalizes loss."""
+
+    def test_soft_mode_does_not_filter(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        # all trajectories violate (residual=2.0 > tolerance=0.1) but mode=soft
+        register_invariant(adapter, "soft_inv", lambda t: 2.0, tolerance=0.1, mode="soft")
+        # should not raise ValidationError
+        adapter.fit(_make_trajectories_43(), steps=2, checkpoint_interval_steps=10)
+
+    def test_soft_mode_residuals_stored(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "energy", lambda t: 1.0, tolerance=0.5, mode="soft")
+        adapter.fit(_make_trajectories_43(10), steps=2, checkpoint_interval_steps=10)
+        assert "energy" in adapter._invariant_residuals
+        assert len(adapter._invariant_residuals["energy"]) == 10
+
+    def test_soft_mode_zero_residual_no_penalty(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "zero", lambda t: 0.0, tolerance=0.5, mode="soft")
+        adapter.fit(_make_trajectories_43(), steps=2, checkpoint_interval_steps=10)
+        assert adapter._soft_penalty_per_step == 0.0
+
+    def test_soft_mode_nonzero_penalty_when_violations(self) -> None:
+        """AC #3: _soft_penalty_per_step > 0 when soft invariant is violated."""
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        # residual=2.0 >> tolerance=0.1 for every trajectory
+        register_invariant(adapter, "violated", lambda t: 2.0, tolerance=0.1, mode="soft")
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        assert adapter._soft_penalty_per_step > 0.0
+
+
+class TestRegisterInvariantIdempotenceStory43:
+    """NFR-09 — fit() twice resets residuals (idempotence)."""
+
+    def test_fit_twice_resets_residuals(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "mass", lambda t: 0.0, tolerance=0.5, mode="soft")
+        adapter.fit(_make_trajectories_43(10), steps=2, checkpoint_interval_steps=10)
+        first_residuals = list(adapter._invariant_residuals["mass"])
+        adapter.fit(_make_trajectories_43(10), steps=2, checkpoint_interval_steps=10)
+        second_residuals = adapter._invariant_residuals["mass"]
+        # second call must not accumulate on top of first — same length
+        assert len(second_residuals) == len(first_residuals)
