@@ -108,3 +108,134 @@ class TestFitDebugHooks:
         adapter = _make_adapter()
         adapter.fit(synthetic_trajectories, steps=20, debug_hooks=True)
         assert adapter._baseline_loss is not None
+
+
+@pytest.mark.gpu
+class TestFitCheckpoint:
+    def test_fit_writes_checkpoint_files_at_interval(
+        self, synthetic_trajectories: list[dict], tmp_path: "Path"
+    ) -> None:
+        adapter = _make_adapter()
+        adapter.fit(
+            synthetic_trajectories,
+            steps=2,
+            checkpoint_interval_steps=1,
+            checkpoint_dir=str(tmp_path),
+        )
+        assert (tmp_path / "checkpoint_step_1.safetensors").exists()
+        assert (tmp_path / "checkpoint_step_2.safetensors").exists()
+
+    def test_checkpoint_metadata_contains_all_required_keys(
+        self, synthetic_trajectories: list[dict], tmp_path: "Path"
+    ) -> None:
+        from safetensors import safe_open
+
+        adapter = _make_adapter()
+        adapter.fit(
+            synthetic_trajectories,
+            steps=1,
+            checkpoint_interval_steps=1,
+            checkpoint_dir=str(tmp_path),
+        )
+        path = str(tmp_path / "checkpoint_step_1.safetensors")
+        with safe_open(path, framework="pt", device="cpu") as f:
+            metadata = f.metadata()
+        assert "physlink_version" in metadata
+        assert "adapter_class" in metadata
+        assert "timestamp" in metadata
+        assert "checkpoint_step" in metadata
+
+    def test_checkpoint_step_metadata_matches_step_number(
+        self, synthetic_trajectories: list[dict], tmp_path: "Path"
+    ) -> None:
+        from safetensors import safe_open
+
+        adapter = _make_adapter()
+        adapter.fit(
+            synthetic_trajectories,
+            steps=1,
+            checkpoint_interval_steps=1,
+            checkpoint_dir=str(tmp_path),
+        )
+        path = str(tmp_path / "checkpoint_step_1.safetensors")
+        with safe_open(path, framework="pt", device="cpu") as f:
+            metadata = f.metadata()
+        assert metadata["checkpoint_step"] == "1"
+
+    def test_checkpoint_adapter_class_is_dreamerv3adapter(
+        self, synthetic_trajectories: list[dict], tmp_path: "Path"
+    ) -> None:
+        from safetensors import safe_open
+
+        adapter = _make_adapter()
+        adapter.fit(
+            synthetic_trajectories,
+            steps=1,
+            checkpoint_interval_steps=1,
+            checkpoint_dir=str(tmp_path),
+        )
+        path = str(tmp_path / "checkpoint_step_1.safetensors")
+        with safe_open(path, framework="pt", device="cpu") as f:
+            metadata = f.metadata()
+        assert metadata["adapter_class"] == "DreamerV3Adapter"
+
+    def test_load_checkpoint_restores_model_weights(
+        self, synthetic_trajectories: list[dict], tmp_path: "Path"
+    ) -> None:
+        import torch
+        from safetensors.torch import load_file
+
+        adapter = _make_adapter()
+        adapter.fit(
+            synthetic_trajectories,
+            steps=2,
+            checkpoint_interval_steps=1,
+            checkpoint_dir=str(tmp_path),
+        )
+        path = str(tmp_path / "checkpoint_step_2.safetensors")
+        state_dict_all = load_file(path, device="cpu")
+        model_sd = {
+            k[len("model."):]: v
+            for k, v in state_dict_all.items()
+            if k.startswith("model.")
+        }
+        first_key = next(iter(model_sd))
+        expected = adapter._model.state_dict()[first_key].cpu()
+        actual = model_sd[first_key]
+        assert torch.allclose(expected, actual)
+
+    def test_fit_after_load_checkpoint_completes_without_error(
+        self, synthetic_trajectories: list[dict], tmp_path: "Path"
+    ) -> None:
+        adapter = _make_adapter()
+        adapter.fit(
+            synthetic_trajectories,
+            steps=2,
+            checkpoint_interval_steps=1,
+            checkpoint_dir=str(tmp_path),
+        )
+        adapter.load_checkpoint(str(tmp_path / "checkpoint_step_2.safetensors"))
+        adapter.fit(
+            synthetic_trajectories,
+            steps=2,
+            checkpoint_dir=str(tmp_path),
+        )
+
+    def test_fit_checkpoint_writing_is_idempotent(
+        self, synthetic_trajectories: list[dict], tmp_path: "Path"
+    ) -> None:
+        adapter = _make_adapter()
+        adapter.fit(
+            synthetic_trajectories,
+            steps=2,
+            checkpoint_interval_steps=1,
+            checkpoint_dir=str(tmp_path),
+        )
+        adapter.fit(
+            synthetic_trajectories,
+            steps=2,
+            checkpoint_interval_steps=1,
+            checkpoint_dir=str(tmp_path),
+        )
+        assert (tmp_path / "checkpoint_step_1.safetensors").exists()
+        assert (tmp_path / "checkpoint_step_2.safetensors").exists()

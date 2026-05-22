@@ -155,6 +155,80 @@ def _build_debug_layout(
         yield progress, task_id
 
 
+def _save_checkpoint(
+    model: Any,  # noqa: ANN401
+    actor: Any,  # noqa: ANN401
+    critic: Any,  # noqa: ANN401
+    step: int,
+    checkpoint_dir: str,
+) -> str:
+    import datetime
+    import os
+
+    from safetensors.torch import save_file
+
+    import physlink
+
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    filename = f"checkpoint_step_{step}.safetensors"
+    path = os.path.join(checkpoint_dir, filename)
+    tensors: dict[str, Any] = {}
+    tensors.update({f"model.{k}": v for k, v in model.state_dict().items()})
+    tensors.update({f"actor.{k}": v for k, v in actor.state_dict().items()})
+    tensors.update({f"critic.{k}": v for k, v in critic.state_dict().items()})
+    metadata = {
+        "physlink_version": physlink.__version__,
+        "adapter_class": "DreamerV3Adapter",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "checkpoint_step": str(step),
+    }
+    save_file(tensors, path, metadata=metadata)
+    print(f"[physlink] Checkpoint saved: {os.path.abspath(path)}")
+    return path
+
+
+def _check_checkpoint_metadata(path: str) -> dict[str, str]:
+    from safetensors import safe_open
+
+    import physlink
+    from physlink.core.exceptions import CheckpointCorruptError, CheckpointVersionError
+
+    try:
+        with safe_open(path, framework="pt", device="cpu") as f:
+            metadata = f.metadata()
+    except Exception as exc:
+        raise CheckpointCorruptError(
+            f"Cannot open checkpoint: {path}\n"
+            f"  Got:      {type(exc).__name__}: {exc}\n"
+            f"  Expected: valid safetensors file\n"
+            f"  Fix:      re-run adapter.fit() to generate a fresh checkpoint."
+        )
+
+    if metadata is None or "physlink_version" not in metadata:
+        raise CheckpointCorruptError(
+            f"Checkpoint metadata missing or incomplete: {path}\n"
+            f"  Got:      metadata={metadata!r}\n"
+            f"  Expected: metadata dict with key 'physlink_version'\n"
+            f"  Fix:      re-run adapter.fit() to generate a fresh checkpoint."
+        )
+
+    checkpoint_version = metadata["physlink_version"]
+    current_version = physlink.__version__
+    cv_parts = checkpoint_version.split(".")
+    cur_parts = current_version.split(".")
+    if cv_parts[:2] != cur_parts[:2]:
+        raise CheckpointVersionError(
+            f"Checkpoint version incompatible: {path}\n"
+            f"  Got:      checkpoint saved with physlink=={checkpoint_version}\n"
+            f"  Expected: compatible version (same major.minor as {current_version})\n"
+            f"  Fix:      re-run adapter.fit() to generate a fresh checkpoint.",
+            checkpoint_version=checkpoint_version,
+            current_version=current_version,
+        )
+
+    return metadata
+
+
 class DreamerV3Adapter(BaseAdapter):
     """DreamerV3 adapter for physical simulation reinforcement learning.
 
@@ -260,6 +334,53 @@ class DreamerV3Adapter(BaseAdapter):
         """Reset all mutable training state for a fresh fit() run (NFR-09)."""
         self._loss_history = []
         self._baseline_loss = None
+
+    def load_checkpoint(self, path: str) -> None:
+        """Load model weights from a safetensors checkpoint.
+
+        Reads checkpoint metadata before loading weights for early detection
+        of version incompatibility or file corruption.
+
+        Args:
+            path: Path to the .safetensors checkpoint file to load.
+
+        Raises:
+            CheckpointCorruptError: If the file is malformed, unreadable, or
+                missing required metadata.
+            CheckpointVersionError: If physlink_version in the checkpoint
+                metadata is incompatible with the installed version
+                (different major.minor component).
+
+        Example:
+            >>> adapter = DreamerV3Adapter(obs, act)
+            >>> adapter.load_checkpoint("./physlink_checkpoints/checkpoint_step_1000.safetensors")
+        """
+        _check_checkpoint_metadata(path)
+
+        import os
+
+        import torch
+        from safetensors.torch import load_file
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self._model is None:
+            self._initialize_model(device)
+        self._model.to(device)
+        self._actor.to(device)
+        self._critic.to(device)
+        state_dict_all = load_file(path, device="cpu")
+        model_sd = {
+            k[len("model."):]: v for k, v in state_dict_all.items() if k.startswith("model.")
+        }
+        actor_sd = {
+            k[len("actor."):]: v for k, v in state_dict_all.items() if k.startswith("actor.")
+        }
+        critic_sd = {
+            k[len("critic."):]: v for k, v in state_dict_all.items() if k.startswith("critic.")
+        }
+        self._model.load_state_dict(model_sd)
+        self._actor.load_state_dict(actor_sd)
+        self._critic.load_state_dict(critic_sd)
+        print(f"[physlink] Checkpoint loaded: {os.path.abspath(path)}")
 
     def _compute_health(self, loss: float) -> str:
         self._loss_history.append(loss)
@@ -382,6 +503,7 @@ class DreamerV3Adapter(BaseAdapter):
         steps: int,
         checkpoint_interval_steps: int = 1000,
         debug_hooks: bool = False,
+        checkpoint_dir: str = "physlink_checkpoints",
     ) -> None:
         """Run the DreamerV3 adaptation loop with a live progress bar.
 
@@ -397,13 +519,15 @@ class DreamerV3Adapter(BaseAdapter):
                 to TrajectoryBatch. Each dict must contain at minimum "obs" and
                 "action" keys with numpy-compatible values.
             steps: Total gradient steps to run. Must be > 0.
-            checkpoint_interval_steps: Interval between checkpoint saves.
-                Checkpoint writing is deferred to Story 3.4; this parameter is
-                accepted to ensure forward-compatible API. Must be > 0.
+            checkpoint_interval_steps: Interval (in steps) between checkpoint
+                saves. A checkpoint file is written every this many steps. Must
+                be > 0.
             debug_hooks: When True, displays a debug panel alongside the progress
                 bar showing pipeline stage statuses (data_loading, world_model_update,
                 actor_update, critic_update). Each stage shows OK or a diagnostic
                 status. Defaults to False (opt-in, not default).
+            checkpoint_dir: Directory where checkpoint files are written. Defaults
+                to "physlink_checkpoints" relative to the current working directory.
 
         Raises:
             ValidationError: If steps <= 0 or checkpoint_interval_steps <= 0.
@@ -483,7 +607,7 @@ class DreamerV3Adapter(BaseAdapter):
         if debug_hooks:
             debug_panel = _DebugPanel()
             with _build_debug_layout(steps, debug_panel) as (progress, task_id):
-                for _ in range(steps):
+                for step_idx in range(steps):
                     stage_statuses = {name: "OK" for name in _STAGE_NAMES}
                     optimizer.zero_grad(set_to_none=True)
                     try:
@@ -502,9 +626,15 @@ class DreamerV3Adapter(BaseAdapter):
                     progress.update(
                         task_id, advance=1, health=self._compute_health(loss.item())
                     )
+                    completed = step_idx + 1
+                    if completed % checkpoint_interval_steps == 0:
+                        _save_checkpoint(
+                            self._model, self._actor, self._critic,
+                            completed, checkpoint_dir,
+                        )
         else:
             with _build_progress_bar(steps) as (progress, task_id):
-                for _ in range(steps):
+                for step_idx in range(steps):
                     optimizer.zero_grad(set_to_none=True)
                     loss = self._training_step(tensor_batch, device)
                     scaler.scale(loss).backward()
@@ -515,6 +645,12 @@ class DreamerV3Adapter(BaseAdapter):
                     progress.update(
                         task_id, advance=1, health=self._compute_health(loss.item())
                     )
+                    completed = step_idx + 1
+                    if completed % checkpoint_interval_steps == 0:
+                        _save_checkpoint(
+                            self._model, self._actor, self._critic,
+                            completed, checkpoint_dir,
+                        )
 
     def explain(self) -> dict[str, Any]:
         """Return a metadata dict describing this adapter's space configuration.

@@ -814,3 +814,219 @@ class TestDebugPanelRendering:
         assert "[bold green]OK[/bold green]" in status_cells
         assert "[bold red]ValueError[/bold red]" in status_cells
         assert "[dim]waiting...[/dim]" in status_cells
+
+
+def _write_test_checkpoint(path: str, metadata: dict[str, str]) -> None:
+    import torch
+    from safetensors.torch import save_file
+
+    save_file({"dummy": torch.tensor([1.0])}, path, metadata=metadata)
+
+
+class TestCheckpointLoadErrors:
+    def _make_adapter(self) -> "DreamerV3Adapter":
+        from physlink import DreamerV3Adapter
+        from physlink.core.spaces import ActionSpace, ObservationSpace
+
+        obs = ObservationSpace.from_proprioception(joints=4, include_velocity=False)
+        act = ActionSpace.continuous(dims=2, bounds=[(-1.0, 1.0)] * 2)
+        return DreamerV3Adapter(obs, act)
+
+    def test_load_checkpoint_raises_corrupt_on_nonexistent_file(
+        self, tmp_path: "Path"
+    ) -> None:
+        from physlink.core.exceptions import CheckpointCorruptError
+
+        adapter = self._make_adapter()
+        with pytest.raises(CheckpointCorruptError):
+            adapter.load_checkpoint(str(tmp_path / "missing.safetensors"))
+
+    def test_load_checkpoint_raises_corrupt_when_physlink_version_key_missing(
+        self, tmp_path: "Path"
+    ) -> None:
+        from physlink.core.exceptions import CheckpointCorruptError
+
+        path = str(tmp_path / "no_version.safetensors")
+        _write_test_checkpoint(path, metadata={"adapter_class": "DreamerV3Adapter"})
+        adapter = self._make_adapter()
+        with pytest.raises(CheckpointCorruptError):
+            adapter.load_checkpoint(path)
+
+    def test_load_checkpoint_raises_version_error_on_incompatible_major_minor(
+        self, tmp_path: "Path"
+    ) -> None:
+        from physlink.core.exceptions import CheckpointVersionError
+
+        path = str(tmp_path / "incompatible.safetensors")
+        _write_test_checkpoint(path, metadata={"physlink_version": "99.99.0"})
+        adapter = self._make_adapter()
+        with pytest.raises(CheckpointVersionError):
+            adapter.load_checkpoint(path)
+
+    def test_checkpoint_version_error_carries_checkpoint_version(
+        self, tmp_path: "Path"
+    ) -> None:
+        from physlink.core.exceptions import CheckpointVersionError
+
+        path = str(tmp_path / "incompatible.safetensors")
+        _write_test_checkpoint(path, metadata={"physlink_version": "99.99.0"})
+        adapter = self._make_adapter()
+        with pytest.raises(CheckpointVersionError) as exc_info:
+            adapter.load_checkpoint(path)
+        assert exc_info.value.checkpoint_version == "99.99.0"
+
+    def test_checkpoint_version_error_carries_current_version(
+        self, tmp_path: "Path"
+    ) -> None:
+        import physlink
+        from physlink.core.exceptions import CheckpointVersionError
+
+        path = str(tmp_path / "incompatible.safetensors")
+        _write_test_checkpoint(path, metadata={"physlink_version": "99.99.0"})
+        adapter = self._make_adapter()
+        with pytest.raises(CheckpointVersionError) as exc_info:
+            adapter.load_checkpoint(path)
+        assert exc_info.value.current_version == physlink.__version__
+
+    def test_load_checkpoint_forward_compatible_extra_keys_no_error(
+        self, tmp_path: "Path"
+    ) -> None:
+        import physlink
+        from physlink.core.exceptions import CheckpointCorruptError, CheckpointVersionError
+
+        path = str(tmp_path / "extra_keys.safetensors")
+        _write_test_checkpoint(
+            path,
+            metadata={
+                "physlink_version": physlink.__version__,
+                "new_field": "something",
+            },
+        )
+        adapter = self._make_adapter()
+        try:
+            adapter.load_checkpoint(path)
+        except (CheckpointVersionError, CheckpointCorruptError):
+            pytest.fail("CheckpointVersionError/CorruptError raised for forward-compatible extra keys")
+        except Exception:
+            pass  # load_state_dict may fail with dummy weights — that is acceptable
+
+    def test_load_checkpoint_same_minor_version_compatible(
+        self, tmp_path: "Path"
+    ) -> None:
+        import physlink
+        from physlink.core.exceptions import CheckpointVersionError
+
+        # Build a version with same major.minor but higher patch: 0.1.99
+        current = physlink.__version__
+        parts = current.split(".")
+        same_minor_version = f"{parts[0]}.{parts[1]}.99"
+
+        path = str(tmp_path / "same_minor.safetensors")
+        _write_test_checkpoint(path, metadata={"physlink_version": same_minor_version})
+        adapter = self._make_adapter()
+        try:
+            adapter.load_checkpoint(path)
+        except CheckpointVersionError:
+            pytest.fail("CheckpointVersionError raised for compatible same major.minor version")
+        except Exception:
+            pass  # load_state_dict may fail with dummy weights — that is acceptable
+
+
+class TestSaveCheckpointFunction:
+    """Tests for _save_checkpoint() directly — CPU-safe, no fit() required."""
+
+    def _make_simple_modules(self) -> tuple:
+        import torch
+
+        model = torch.nn.Linear(4, 4)
+        actor = torch.nn.Linear(4, 2)
+        critic = torch.nn.Linear(4, 1)
+        return model, actor, critic
+
+    def test_save_checkpoint_creates_directory_if_not_exists(
+        self, tmp_path: "Path"
+    ) -> None:
+        import os
+
+        from physlink.adapters.dreamer import _save_checkpoint
+
+        model, actor, critic = self._make_simple_modules()
+        nested_dir = str(tmp_path / "nonexistent" / "nested")
+        path = _save_checkpoint(model, actor, critic, step=1, checkpoint_dir=nested_dir)
+
+        assert os.path.isdir(nested_dir)
+        assert os.path.exists(path)
+
+    def test_save_checkpoint_returns_path_ending_with_step_filename(
+        self, tmp_path: "Path"
+    ) -> None:
+        from physlink.adapters.dreamer import _save_checkpoint
+
+        model, actor, critic = self._make_simple_modules()
+        result = _save_checkpoint(model, actor, critic, step=42, checkpoint_dir=str(tmp_path))
+
+        assert isinstance(result, str)
+        assert result.endswith("checkpoint_step_42.safetensors")
+
+    def test_save_checkpoint_prints_checkpoint_saved_message(
+        self, tmp_path: "Path", capsys: pytest.CaptureFixture
+    ) -> None:
+        import os
+
+        from physlink.adapters.dreamer import _save_checkpoint
+
+        model, actor, critic = self._make_simple_modules()
+        path = _save_checkpoint(model, actor, critic, step=7, checkpoint_dir=str(tmp_path))
+
+        captured = capsys.readouterr()
+        assert "[physlink] Checkpoint saved:" in captured.out
+        assert os.path.abspath(path) in captured.out
+
+
+class TestCheckCheckpointMetadata:
+    """Tests for _check_checkpoint_metadata() — CPU-safe, tests happy path and error formats."""
+
+    def test_returns_metadata_dict_on_valid_checkpoint(
+        self, tmp_path: "Path"
+    ) -> None:
+        import physlink
+        from physlink.adapters.dreamer import _check_checkpoint_metadata
+
+        path = str(tmp_path / "valid.safetensors")
+        _write_test_checkpoint(path, metadata={"physlink_version": physlink.__version__})
+
+        result = _check_checkpoint_metadata(path)
+
+        assert isinstance(result, dict)
+        assert result["physlink_version"] == physlink.__version__
+
+    def test_corrupt_error_message_contains_got_expected_fix(
+        self, tmp_path: "Path"
+    ) -> None:
+        from physlink.adapters.dreamer import _check_checkpoint_metadata
+        from physlink.core.exceptions import CheckpointCorruptError
+
+        with pytest.raises(CheckpointCorruptError) as exc_info:
+            _check_checkpoint_metadata(str(tmp_path / "missing.safetensors"))
+
+        msg = str(exc_info.value)
+        assert "Got:" in msg
+        assert "Expected:" in msg
+        assert "Fix:" in msg
+
+    def test_version_error_message_contains_got_expected_fix(
+        self, tmp_path: "Path"
+    ) -> None:
+        from physlink.adapters.dreamer import _check_checkpoint_metadata
+        from physlink.core.exceptions import CheckpointVersionError
+
+        path = str(tmp_path / "bad_version.safetensors")
+        _write_test_checkpoint(path, metadata={"physlink_version": "99.99.0"})
+
+        with pytest.raises(CheckpointVersionError) as exc_info:
+            _check_checkpoint_metadata(path)
+
+        msg = str(exc_info.value)
+        assert "Got:" in msg
+        assert "Expected:" in msg
+        assert "Fix:" in msg
