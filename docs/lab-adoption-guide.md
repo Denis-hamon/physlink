@@ -93,6 +93,44 @@ run = adapter.fit(buffer, steps=5_000)
 
 ---
 
+## Trajectory Quality Gate
+
+Before adaptation, make the row contract explicit and keep a report with the experiment record.
+`TrajectorySchema` derives vector dimensions and action bounds from the spaces you already chose.
+Sequence context remains visible even when a quick prototype does not make it blocking yet.
+
+```python
+from physlink.core._types import TrajectoryBatch, TrajectorySchema
+
+trajectories = [
+    {
+        "obs": [0.1] * 14,
+        "action": [0.0] * 7,
+        "sequence_id": "episode-001",
+        "step": 0,
+        "metadata": {"source": "sim-export", "units": "SI"},
+    }
+]
+
+schema = TrajectorySchema.from_spaces(
+    obs_space,
+    act_space,
+    metadata_keys=("source", "units"),
+)
+batch = TrajectoryBatch.from_list(trajectories)
+report = batch.quality_report(schema)
+
+print(report.summary())  # PASS/FAIL plus error and warning counts
+report.raise_for_errors()  # stop before fit() on shape, bounds, or missing-value errors
+run = adapter.fit(batch, steps=5_000)
+```
+
+The report separates blocking errors from warnings. Missing `sequence_id`, `step`, or requested
+metadata keys stay inspectable in a prototype report; set `require_sequence_fields=True` when
+sequence context must block a run.
+
+---
+
 ## Performance Claims
 
 Petra cannot run the T4 GPU tests herself. Two resources verify the published numbers without

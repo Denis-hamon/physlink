@@ -6,7 +6,14 @@ import json
 
 import pytest
 
-from physlink.core._types import AdaptationConfig, AdaptationRun, TrajectoryBatch, TrajectoryBuffer
+from physlink.core._types import (
+    AdaptationConfig,
+    AdaptationRun,
+    TrajectoryBatch,
+    TrajectoryBuffer,
+    TrajectorySchema,
+)
+from physlink.core.exceptions import ValidationError
 from physlink.core.spaces import ActionSpace, ObservationSpace
 
 
@@ -111,6 +118,107 @@ class TestSyntheticTrajectoriesFixtureShapes:
         assert all("obs" in t and "action" in t for t in synthetic_trajectories)
 
 
+def _make_trajectory_schema() -> TrajectorySchema:
+    obs = ObservationSpace.from_proprioception(joints=2)
+    act = ActionSpace.continuous(dims=2, bounds=[(-1.0, 1.0)] * 2)
+    return TrajectorySchema.from_spaces(obs, act, metadata_keys=("source", "units"))
+
+
+class TestTrajectorySchemaQualityReport:
+    def test_report_accepts_valid_row_with_review_context(self) -> None:
+        batch = TrajectoryBatch.from_list(
+            [
+                {
+                    "obs": [0.1, 0.2],
+                    "action": [0.0, 0.5],
+                    "sequence_id": "episode-001",
+                    "step": 0,
+                    "metadata": {"source": "sim", "units": "SI"},
+                }
+            ]
+        )
+
+        report = batch.quality_report(_make_trajectory_schema())
+
+        assert report.is_valid
+        assert report.errors == ()
+        assert report.warnings == ()
+        assert report.summary() == "PASS: checked 1 trajectory rows, 0 errors, 0 warnings"
+
+    def test_report_warns_when_sequence_context_and_metadata_are_implicit(self) -> None:
+        report = _make_trajectory_schema().inspect([{"obs": [0.1, 0.2], "action": [0.0, 0.5]}])
+
+        assert report.is_valid
+        assert {issue.code for issue in report.warnings} == {
+            "missing_metadata",
+            "missing_sequence_field",
+        }
+
+    def test_report_rejects_shape_bounds_and_non_finite_values(self) -> None:
+        report = _make_trajectory_schema().inspect(
+            [
+                {
+                    "obs": [0.1, float("nan")],
+                    "action": [0.0, 2.0],
+                    "sequence_id": "episode-001",
+                    "step": 0,
+                    "metadata": {"source": "sim", "units": "SI"},
+                },
+                {
+                    "obs": [0.1],
+                    "sequence_id": "episode-001",
+                    "step": 1,
+                    "metadata": {"source": "sim", "units": "SI"},
+                },
+            ]
+        )
+
+        assert not report.is_valid
+        assert {issue.code for issue in report.errors} == {
+            "action_out_of_bounds",
+            "missing_field",
+            "non_finite_value",
+            "vector_dim_mismatch",
+        }
+
+    def test_sequence_fields_can_be_made_blocking(self) -> None:
+        schema = TrajectorySchema(obs_dims=2, action_dims=2, require_sequence_fields=True)
+
+        report = schema.inspect([{"obs": [0.1, 0.2], "action": [0.0, 0.5]}])
+
+        assert not report.is_valid
+        assert {issue.code for issue in report.errors} == {"missing_sequence_field"}
+
+    def test_report_raise_for_errors_uses_diagnostic_template(self) -> None:
+        report = _make_trajectory_schema().inspect([])
+
+        with pytest.raises(ValidationError) as exc_info:
+            report.raise_for_errors()
+
+        message = str(exc_info.value)
+        assert "Got:" in message
+        assert "Expected:" in message
+        assert "Fix:" in message
+
+    def test_buffer_can_emit_json_compatible_quality_report(self) -> None:
+        buffer = TrajectoryBuffer(
+            data=[
+                {
+                    "obs": [0.1, 0.2],
+                    "action": [0.0, 0.5],
+                    "sequence_id": "episode-001",
+                    "step": 0,
+                    "metadata": {"source": "sim", "units": "SI"},
+                }
+            ]
+        )
+
+        payload = buffer.quality_report(_make_trajectory_schema()).to_dict()
+
+        assert payload["is_valid"] is True
+        assert payload["errors"] == []
+
+
 class TestAdaptationConfigImmutability:
     def test_config_raises_on_mutation(self) -> None:
         from dataclasses import FrozenInstanceError
@@ -122,7 +230,9 @@ class TestAdaptationConfigImmutability:
     def test_config_stores_correct_fields(self) -> None:
         obs = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
         act = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
-        config = AdaptationConfig(obs_space=obs, act_space=act, steps=500, checkpoint_interval_steps=100)
+        config = AdaptationConfig(
+            obs_space=obs, act_space=act, steps=500, checkpoint_interval_steps=100
+        )
         assert config.obs_space is obs
         assert config.act_space is act
         assert config.steps == 500
@@ -147,7 +257,8 @@ class TestAdaptationConfigImmutability:
 class TestAdaptationConfigSerialization:
     def test_to_dict_contains_required_keys(self) -> None:
         d = _make_config().to_dict()
-        for key in ("obs_space", "act_space", "steps", "checkpoint_interval_steps", "checkpoint_dir"):
+        keys = ("obs_space", "act_space", "steps", "checkpoint_interval_steps", "checkpoint_dir")
+        for key in keys:
             assert key in d
 
     def test_to_dict_obs_space_is_json_serializable(self) -> None:

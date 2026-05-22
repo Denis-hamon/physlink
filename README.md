@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb"><strong>Quick Start →</strong></a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
-  <a href="https://Denis-hamon.github.io/physlink/lab-adoption-guide/"><strong>Evaluate for your lab →</strong></a>
+  <a href="docs/lab-adoption-guide.md"><strong>Evaluate for your lab →</strong></a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <a href="https://Denis-hamon.github.io/physlink/domain-scientists/"><strong>For Domain Scientists →</strong></a>
 </p>

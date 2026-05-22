@@ -71,7 +71,7 @@ The stable public API for v0.1.x is exactly **7 symbols** exported from `physlin
 | `ComplianceReport` | class | `core/validation.py` | Invariant compliance results |
 | `PhysLinkError` | exception | `core/exceptions.py` | Base exception class |
 
-Advanced types available but not in `__all__`: `AdaptationConfig`, `AdaptationRun`, `TrajectoryBatch`, `TrajectoryBuffer` (import from `physlink.core._types`).
+Advanced types available but not in `__all__`: `AdaptationConfig`, `AdaptationRun`, `TrajectoryBatch`, `TrajectoryBuffer`, `TrajectorySchema`, `TrajectoryQualityReport` (import from `physlink.core._types`).
 
 ---
 
@@ -109,9 +109,13 @@ PhysLinkError (base)
 
 ### `core/_types.py` — Data Types
 
-**TrajectoryBatch**: immutable container for `list[dict]` (at minimum `"obs"` and `"action"` keys). Created via `from_list()`. Supports `len()`, iteration.
+**TrajectoryBatch**: lightweight container for `list[dict]` (at minimum `"obs"` and `"action"` keys for adapter consumption). Created via `from_list()`. Supports `len()`, iteration, and opt-in `quality_report(schema)` before adaptation.
 
 **TrajectoryBuffer**: mutable, persistable. `export(path)` → pickle, `load(path)` → classmethod. `to_batch()` converts to TrajectoryBatch for `adapter.fit()`.
+
+**TrajectorySchema**: explicit per-row data contract derived from spaces via `from_spaces()`. Checks observation/action shape, finite values, and action bounds while surfacing missing sequence context and requested metadata as report issues.
+
+**TrajectoryQualityReport**: inspectable validation result with blocking `errors`, non-blocking `warnings`, JSON-compatible `to_dict()`, and `raise_for_errors()` for experiment gates.
 
 **AdaptationConfig** (frozen dataclass): serializable to dict/YAML/JSON. Fields: `obs_space`, `act_space`, `steps`, `checkpoint_interval_steps`, `checkpoint_dir`. Round-trips via `to_dict()` / `from_dict()` / `to_yaml()` / `from_yaml()`.
 

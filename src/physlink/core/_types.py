@@ -6,10 +6,13 @@ Implementation in Story 2.1 (TrajectoryBatch) and Story 4.1 (AdaptationConfig, A
 from __future__ import annotations
 
 import datetime
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal, cast
 
+import numpy as np
+
+from physlink.core.exceptions import ValidationError
 from physlink.core.spaces import ActionSpace, ObservationSpace
 
 
@@ -47,6 +50,15 @@ class TrajectoryBatch:
             True
         """
         return cls(data=data)
+
+    def quality_report(self, schema: TrajectorySchema) -> TrajectoryQualityReport:
+        """Inspect this batch against an explicit trajectory schema.
+
+        ``TrajectoryBatch`` remains a lightweight adapter input. Call this
+        method before ``fit()`` when data assumptions should be visible and
+        reviewable instead of being inferred inside a training loop.
+        """
+        return schema.inspect(self)
 
     def __len__(self) -> int:
         return len(self.data)
@@ -137,6 +149,10 @@ class TrajectoryBuffer:
         """
         return TrajectoryBatch.from_list(self.data)
 
+    def quality_report(self, schema: TrajectorySchema) -> TrajectoryQualityReport:
+        """Inspect buffered rollout data against an explicit schema."""
+        return schema.inspect(self)
+
     def __len__(self) -> int:
         return len(self.data)
 
@@ -145,6 +161,399 @@ class TrajectoryBuffer:
 
     def __repr__(self) -> str:
         return f"TrajectoryBuffer(n={len(self.data)})"
+
+
+@dataclass(frozen=True)
+class TrajectoryQualityIssue:
+    """One inspectable data-contract finding from a trajectory quality report."""
+
+    severity: Literal["error", "warning"]
+    code: str
+    message: str
+    row_index: int | None = None
+    field: str | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize the issue into a JSON-compatible mapping."""
+        payload: dict[str, object] = {
+            "severity": self.severity,
+            "code": self.code,
+            "message": self.message,
+        }
+        if self.row_index is not None:
+            payload["row_index"] = self.row_index
+        if self.field is not None:
+            payload["field"] = self.field
+        return payload
+
+
+@dataclass(frozen=True)
+class TrajectoryQualityReport:
+    """Quality gate output for trajectory data inspected before adaptation."""
+
+    checked_rows: int
+    errors: tuple[TrajectoryQualityIssue, ...] = ()
+    warnings: tuple[TrajectoryQualityIssue, ...] = ()
+
+    @property
+    def is_valid(self) -> bool:
+        """Return ``True`` when no blocking schema errors were found."""
+        return not self.errors
+
+    def summary(self) -> str:
+        """Return a compact review line for logs and experiment notes."""
+        status = "PASS" if self.is_valid else "FAIL"
+        return (
+            f"{status}: checked {self.checked_rows} trajectory rows, "
+            f"{len(self.errors)} errors, {len(self.warnings)} warnings"
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize the report into a JSON-compatible mapping."""
+        return {
+            "checked_rows": self.checked_rows,
+            "is_valid": self.is_valid,
+            "errors": [issue.to_dict() for issue in self.errors],
+            "warnings": [issue.to_dict() for issue in self.warnings],
+        }
+
+    def raise_for_errors(self) -> None:
+        """Raise ``ValidationError`` when the report contains blocking issues."""
+        if self.is_valid:
+            return
+
+        first = self.errors[0]
+        location = f"row {first.row_index}, " if first.row_index is not None else ""
+        raise ValidationError(
+            "TrajectoryQualityReport.raise_for_errors: trajectory schema validation failed.\n"
+            f"  Got:      {len(self.errors)} error(s) across {self.checked_rows} rows; "
+            f"first={location}{first.code}: {first.message}\n"
+            "  Expected: trajectory rows matching the configured TrajectorySchema\n"
+            "  Fix:      inspect report.errors, repair the data contract, and run the "
+            "quality report again."
+        )
+
+
+@dataclass(frozen=True)
+class TrajectorySchema:
+    """Per-row contract for rollout data inspected before a model sees it.
+
+    The current adapters consume one row per time step with at least ``obs`` and
+    ``action`` vector fields. Sequence context and metadata are kept visible as
+    report warnings unless callers make sequence fields blocking with
+    ``require_sequence_fields=True``.
+    """
+
+    obs_dims: int
+    action_dims: int
+    action_bounds: tuple[tuple[float, float], ...] | None = None
+    metadata_keys: tuple[str, ...] = ()
+    require_sequence_fields: bool = False
+
+    def __post_init__(self) -> None:
+        self._validate_dims("obs_dims", self.obs_dims)
+        self._validate_dims("action_dims", self.action_dims)
+
+        if self.action_bounds is not None and len(self.action_bounds) != self.action_dims:
+            raise ValidationError(
+                "TrajectorySchema: action_bounds length mismatch.\n"
+                f"  Got:      {len(self.action_bounds)} action bounds\n"
+                f"  Expected: {self.action_dims} action bounds, one per action dimension\n"
+                "  Fix:      build the schema with TrajectorySchema.from_spaces() or provide "
+                "one (min, max) tuple per action."
+            )
+        if any(not isinstance(key, str) or not key for key in self.metadata_keys):
+            raise ValidationError(
+                "TrajectorySchema: invalid metadata_keys.\n"
+                f"  Got:      metadata_keys={self.metadata_keys!r}\n"
+                "  Expected: non-empty string keys to inspect inside row['metadata']\n"
+                "  Fix:      pass keys such as ('source', 'units') or leave metadata_keys empty."
+            )
+
+    @classmethod
+    def from_spaces(
+        cls,
+        obs_space: ObservationSpace,
+        act_space: ActionSpace,
+        *,
+        metadata_keys: tuple[str, ...] = (),
+        require_sequence_fields: bool = False,
+    ) -> TrajectorySchema:
+        """Derive shape and action-bound checks from PhysLink spaces."""
+        return cls(
+            obs_dims=obs_space.dims,
+            action_dims=act_space.dims,
+            action_bounds=tuple(act_space.bounds),
+            metadata_keys=metadata_keys,
+            require_sequence_fields=require_sequence_fields,
+        )
+
+    def inspect(
+        self,
+        trajectories: TrajectoryBatch | TrajectoryBuffer | list[dict[str, Any]],
+    ) -> TrajectoryQualityReport:
+        """Inspect rollout rows without mutating or training on them."""
+        if isinstance(trajectories, (TrajectoryBatch, TrajectoryBuffer)):
+            rows = trajectories.data
+        else:
+            rows = trajectories
+
+        errors: list[TrajectoryQualityIssue] = []
+        warnings: list[TrajectoryQualityIssue] = []
+
+        if not rows:
+            errors.append(
+                TrajectoryQualityIssue(
+                    severity="error",
+                    code="empty_batch",
+                    message="no rollout rows were provided",
+                )
+            )
+
+        for row_index, row in enumerate(rows):
+            if not isinstance(row, Mapping):
+                errors.append(
+                    TrajectoryQualityIssue(
+                        severity="error",
+                        code="row_not_mapping",
+                        message=f"row has type {type(row).__name__}, not a mapping",
+                        row_index=row_index,
+                    )
+                )
+                continue
+
+            obs_vector = self._inspect_vector(
+                row=row,
+                row_index=row_index,
+                field_name="obs",
+                expected_dims=self.obs_dims,
+                errors=errors,
+            )
+            action_vector = self._inspect_vector(
+                row=row,
+                row_index=row_index,
+                field_name="action",
+                expected_dims=self.action_dims,
+                errors=errors,
+            )
+            if obs_vector is not None:
+                self._inspect_finite_values(obs_vector, row_index, "obs", errors)
+            if action_vector is not None:
+                action_is_finite = self._inspect_finite_values(
+                    action_vector, row_index, "action", errors
+                )
+                if action_is_finite:
+                    self._inspect_action_bounds(action_vector, row_index, errors)
+
+            self._inspect_sequence_context(row, row_index, errors, warnings)
+            self._inspect_metadata(row, row_index, errors, warnings)
+
+        return TrajectoryQualityReport(
+            checked_rows=len(rows),
+            errors=tuple(errors),
+            warnings=tuple(warnings),
+        )
+
+    @staticmethod
+    def _validate_dims(name: str, value: int) -> None:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValidationError(
+                f"TrajectorySchema: invalid {name}.\n"
+                f"  Got:      {name}={value!r}\n"
+                f"  Expected: {name} must be a positive integer\n"
+                f"  Fix:      pass {name} from a PhysLink space or set it explicitly."
+            )
+
+    @staticmethod
+    def _inspect_vector(
+        *,
+        row: Mapping[str, Any],
+        row_index: int,
+        field_name: str,
+        expected_dims: int,
+        errors: list[TrajectoryQualityIssue],
+    ) -> np.ndarray[Any, Any] | None:
+        if field_name not in row:
+            errors.append(
+                TrajectoryQualityIssue(
+                    severity="error",
+                    code="missing_field",
+                    message=f"required field '{field_name}' is absent",
+                    row_index=row_index,
+                    field=field_name,
+                )
+            )
+            return None
+
+        try:
+            vector = np.asarray(row[field_name], dtype=float)
+        except (TypeError, ValueError):
+            errors.append(
+                TrajectoryQualityIssue(
+                    severity="error",
+                    code="non_numeric_vector",
+                    message=f"field '{field_name}' cannot be converted to a numeric vector",
+                    row_index=row_index,
+                    field=field_name,
+                )
+            )
+            return None
+
+        if vector.ndim != 1:
+            errors.append(
+                TrajectoryQualityIssue(
+                    severity="error",
+                    code="vector_rank_mismatch",
+                    message=f"field '{field_name}' has rank {vector.ndim}, expected rank 1",
+                    row_index=row_index,
+                    field=field_name,
+                )
+            )
+            return None
+
+        if vector.shape[0] != expected_dims:
+            errors.append(
+                TrajectoryQualityIssue(
+                    severity="error",
+                    code="vector_dim_mismatch",
+                    message=(
+                        f"field '{field_name}' has {vector.shape[0]} values, "
+                        f"expected {expected_dims}"
+                    ),
+                    row_index=row_index,
+                    field=field_name,
+                )
+            )
+            return None
+        return cast(np.ndarray[Any, Any], vector)
+
+    @staticmethod
+    def _inspect_finite_values(
+        vector: np.ndarray[Any, Any],
+        row_index: int,
+        field_name: str,
+        errors: list[TrajectoryQualityIssue],
+    ) -> bool:
+        if bool(np.all(np.isfinite(vector))):
+            return True
+        errors.append(
+            TrajectoryQualityIssue(
+                severity="error",
+                code="non_finite_value",
+                message=f"field '{field_name}' contains NaN or infinity",
+                row_index=row_index,
+                field=field_name,
+            )
+        )
+        return False
+
+    def _inspect_action_bounds(
+        self,
+        action_vector: np.ndarray[Any, Any],
+        row_index: int,
+        errors: list[TrajectoryQualityIssue],
+    ) -> None:
+        if self.action_bounds is None:
+            return
+        for dim_index, (value, bound) in enumerate(zip(action_vector, self.action_bounds)):
+            lo, hi = bound
+            if value < lo or value > hi:
+                errors.append(
+                    TrajectoryQualityIssue(
+                        severity="error",
+                        code="action_out_of_bounds",
+                        message=(
+                            f"action dimension {dim_index} has value {value}, "
+                            f"outside [{lo}, {hi}]"
+                        ),
+                        row_index=row_index,
+                        field="action",
+                    )
+                )
+
+    def _inspect_sequence_context(
+        self,
+        row: Mapping[str, Any],
+        row_index: int,
+        errors: list[TrajectoryQualityIssue],
+        warnings: list[TrajectoryQualityIssue],
+    ) -> None:
+        sequence_issues = errors if self.require_sequence_fields else warnings
+        severity: Literal["error", "warning"] = (
+            "error" if self.require_sequence_fields else "warning"
+        )
+        for field_name in ("sequence_id", "step"):
+            if field_name not in row:
+                sequence_issues.append(
+                    TrajectoryQualityIssue(
+                        severity=severity,
+                        code="missing_sequence_field",
+                        message=f"sequence context field '{field_name}' is absent",
+                        row_index=row_index,
+                        field=field_name,
+                    )
+                )
+
+        if "step" in row:
+            step = row["step"]
+            if isinstance(step, bool) or not isinstance(step, int) or step < 0:
+                errors.append(
+                    TrajectoryQualityIssue(
+                        severity="error",
+                        code="invalid_step",
+                        message="field 'step' must be a non-negative integer",
+                        row_index=row_index,
+                        field="step",
+                    )
+                )
+
+    def _inspect_metadata(
+        self,
+        row: Mapping[str, Any],
+        row_index: int,
+        errors: list[TrajectoryQualityIssue],
+        warnings: list[TrajectoryQualityIssue],
+    ) -> None:
+        if "metadata" in row and not isinstance(row["metadata"], Mapping):
+            errors.append(
+                TrajectoryQualityIssue(
+                    severity="error",
+                    code="metadata_not_mapping",
+                    message="field 'metadata' must be a mapping when present",
+                    row_index=row_index,
+                    field="metadata",
+                )
+            )
+            return
+
+        if not self.metadata_keys:
+            return
+        if "metadata" not in row:
+            warnings.append(
+                TrajectoryQualityIssue(
+                    severity="warning",
+                    code="missing_metadata",
+                    message="metadata is absent, so provenance context is incomplete",
+                    row_index=row_index,
+                    field="metadata",
+                )
+            )
+            return
+
+        metadata = row["metadata"]
+        if not isinstance(metadata, Mapping):
+            return
+        for key in self.metadata_keys:
+            if key not in metadata:
+                warnings.append(
+                    TrajectoryQualityIssue(
+                        severity="warning",
+                        code="missing_metadata_key",
+                        message=f"metadata key '{key}' is absent",
+                        row_index=row_index,
+                        field="metadata",
+                    )
+                )
 
 
 @dataclass(frozen=True)

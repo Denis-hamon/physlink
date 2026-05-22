@@ -33,6 +33,13 @@ it materially different trajectories while believing they ran the same experimen
 - A reproducible report showing which data checks ran before adaptation.
 - Tests for schema round-trips and validation behavior.
 
+### First proof slice
+
+`TrajectorySchema` now derives row checks from PhysLink spaces and emits a
+`TrajectoryQualityReport` before adaptation. The first checks cover vector shape, finite values,
+action bounds, explicit sequence context, and requested metadata keys; the lab adoption guide shows
+the report as an experiment gate rather than hiding it inside `fit()`.
+
 ### Exit criteria
 
 PhysLink can reject or explain the most important data-contract failures before a training loop
@@ -116,4 +123,3 @@ The order matters:
 1. make data assumptions inspectable;
 2. make run evidence reviewable;
 3. make backend interchangeability testable.
-
