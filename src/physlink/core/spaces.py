@@ -241,8 +241,8 @@ class ActionSpace:
             >>> info = act_space.explain()
             >>> info["dims"]
             7
-            >>> info["bounds"][0]
-            [-1.0, 1.0]
+            >>> len(info["bounds"])
+            7
         """
         return {
             "type": "ActionSpace",

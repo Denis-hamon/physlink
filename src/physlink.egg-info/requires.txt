@@ -12,3 +12,8 @@ pytest-benchmark>=4.0
 pre-commit>=3.7
 build>=1.2
 torch
+
+[docs]
+mkdocs-material>=9.5
+mkdocstrings[python]>=0.25
+mike>=2.1

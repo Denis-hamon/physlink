@@ -27,6 +27,11 @@ dev = [
     "build>=1.2",
     "torch",  # for adapters/ testing; excluded from core/ strict check
 ]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+    "mike>=2.1",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

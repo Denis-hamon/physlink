@@ -1,0 +1,49 @@
+site_name: PhysLink
+site_description: Backend-agnostic adapter library for physical simulation ML
+site_url: https://YOUR-ORG.github.io/physlink/
+repo_url: https://github.com/YOUR-ORG/physlink
+repo_name: YOUR-ORG/physlink
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_root_full_path: false
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Domain Scientists: domain-scientists.md
+  - API Reference: api/index.md
+  - Changelog: changelog.md
+  - Lab Adoption Guide: lab-adoption-guide.md
+
+extra:
+  version:
+    provider: mike

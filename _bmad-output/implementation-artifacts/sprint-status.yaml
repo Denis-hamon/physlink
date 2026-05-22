@@ -35,7 +35,7 @@
 # - BLOCKER: Story 6.1 requires README discoverability decision (owner + deadline) before dev start
 
 generated: 2026-05-21
-last_updated: 2026-05-22  # story 1.6 → done; epic-1 → done; epic-1-retrospective → done; epic-2 → in-progress; story 2.1 → done; story 2.2 → done; story 2.3 → done; story 2.4 → done
+last_updated: 2026-05-22  # story 1.6 → done; epic-1 → done; epic-1-retrospective → done; epic-2 → in-progress; story 2.1 → done; story 2.2 → done; story 2.3 → done; story 2.4 → done; story 2.5 → done
 project: PhysLink
 project_key: NOKEY
 tracking_system: file-system
@@ -66,7 +66,7 @@ development_status:
   2-2-observationspace-construction-and-validation: done
   2-3-actionspace-construction-and-validation: done
   2-4-space-explain-introspection: done
-  2-5-mkdocs-documentation-site: backlog
+  2-5-mkdocs-documentation-site: done
   2-6-google-style-docstrings-and-public-api-finalization: backlog
   epic-2-retrospective: optional
 

@@ -35,6 +35,24 @@ jobs:
       - name: Test — CPU suite
         run: pytest -m "not gpu" tests/ -v
 
+  docs:
+    name: docs-build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install docs dependencies
+        run: pip install -e ".[docs]"
+
+      - name: Build docs — strict
+        run: mkdocs build --strict
+
   test-gpu:
     name: test-gpu (T4, release tags)
     runs-on: [self-hosted, gpu]
