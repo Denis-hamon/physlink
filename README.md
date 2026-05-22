@@ -21,7 +21,13 @@
 
 **PhysLink bridges physical simulators and deep RL adapters in one `pip install`.**
 
-Plug your robot trajectories into [DreamerV3](https://github.com/danijar/dreamerv3) (and future backends) without writing boilerplate space definitions, checkpoint logic, or compliance checks. PhysLink handles the plumbing — you keep the science.
+Backend-agnostic adapter library for physical simulation ML.
+
+Plug your robot trajectories into a Dreamer-inspired world model adapter without writing boilerplate space definitions, checkpoint logic, or compliance checks. PhysLink handles the plumbing — you keep the science.
+
+> **Note:** `DreamerV3Adapter` implements a Dreamer-like RSSM architecture (encoder -> GRU -> prior/posterior -> actor/critic) and is architecturally inspired by [DreamerV3](https://github.com/danijar/dreamerv3). It is a prototype, not a wrapper around the original DreamerV3 codebase.
+
+Read the [product thesis behind PhysLink](PRODUCT_THESIS.md): why world-model tooling needs explicit interfaces for data, actions, domain constraints, evaluation, and trust.
 
 ## Why PhysLink
 
@@ -51,7 +57,7 @@ physlink.doctor()
 
 # 2. Define spaces from your robot config
 obs = physlink.ObservationSpace.from_proprioception(joints=7, include_velocity=True)
-act = physlink.ActionSpace.continuous(dims=7, bounds=(-1.0, 1.0))
+act = physlink.ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
 
 # 3. Adapt
 adapter = physlink.DreamerV3Adapter(obs, act)
