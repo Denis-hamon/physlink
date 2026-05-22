@@ -38,6 +38,13 @@ notebook = [
     "nbformat>=5.9",
 ]
 
+[project.urls]
+Homepage = "https://Denis-hamon.github.io/physlink/"
+Documentation = "https://Denis-hamon.github.io/physlink/"
+Repository = "https://github.com/Denis-hamon/physlink"
+"Bug Tracker" = "https://github.com/Denis-hamon/physlink/issues"
+Changelog = "https://github.com/Denis-hamon/physlink/blob/main/CHANGELOG.md"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
