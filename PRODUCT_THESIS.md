@@ -158,6 +158,9 @@ The thesis is larger than the current implementation. The most important missing
 
 These are not footnotes. They are the next tests of whether the product thesis holds.
 
+The [roadmap](ROADMAP.md) turns the next tests into three focused workstreams: trajectory schema and
+data quality, world-model evaluation, and an external backend integration boundary.
+
 ## Product Standard
 
 The success metric for a project like this should not be a polished screenshot or a spike in stars.
@@ -170,4 +173,3 @@ The stronger signal is co-ownership by real users:
 
 PhysLink is an early artifact toward that standard. Its value is in making the interface problem
 concrete enough to build, test, criticize, and improve.
-

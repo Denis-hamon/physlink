@@ -27,7 +27,7 @@ Plug your robot trajectories into a Dreamer-inspired world model adapter without
 
 > **Note:** `DreamerV3Adapter` implements a Dreamer-like RSSM architecture (encoder -> GRU -> prior/posterior -> actor/critic) and is architecturally inspired by [DreamerV3](https://github.com/danijar/dreamerv3). It is a prototype, not a wrapper around the original DreamerV3 codebase.
 
-Read the [product thesis behind PhysLink](PRODUCT_THESIS.md): why world-model tooling needs explicit interfaces for data, actions, domain constraints, evaluation, and trust.
+Read the [product thesis behind PhysLink](PRODUCT_THESIS.md): why world-model tooling needs explicit interfaces for data, actions, domain constraints, evaluation, and trust. The [roadmap](ROADMAP.md) defines the next three evidence-building workstreams.
 
 ## Why PhysLink
 
