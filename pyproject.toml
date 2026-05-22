@@ -33,6 +33,10 @@ docs = [
     "mkdocstrings[python]>=0.25",
     "mike>=2.1",
 ]
+notebook = [
+    "nbconvert>=7.0",
+    "nbformat>=5.9",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -64,4 +68,5 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 markers = [
     "gpu: requires CUDA GPU — excluded from test-cpu CI job (deselect with '-m not gpu')",
+    "notebook_execution: executes the Colab notebook via nbconvert — run separately with '-m notebook_execution'",
 ]
