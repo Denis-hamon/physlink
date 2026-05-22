@@ -245,10 +245,16 @@ class TestChangelogFooterLinks:
         footer_start = text.rfind("[Unreleased]:")
         assert footer_start != -1, "[Unreleased]: footer link not found"
         footer_section = text[footer_start:]
-        assert "YOUR-ORG/physlink" in footer_section, (
-            "'YOUR-ORG/physlink' placeholder not found in footer comparison links.\n"
-            "  Expected: footer links use 'YOUR-ORG/physlink' consistent with README.md\n"
-            "  Fix: use 'https://github.com/YOUR-ORG/physlink/...' in all footer links"
+        assert "YOUR-ORG" not in footer_section, (
+            "CHANGELOG footer still contains the 'YOUR-ORG' template placeholder.\n"
+            "  Fix: replace YOUR-ORG with the actual GitHub owner deploying this fork."
+        )
+        assert re.search(
+            r"https://github\.com/[A-Za-z0-9](?:[A-Za-z0-9-]{0,38}[A-Za-z0-9])?/physlink",
+            footer_section,
+        ), (
+            "CHANGELOG footer must contain real 'https://github.com/<owner>/physlink' "
+            "comparison links."
         )
 
     def test_unreleased_footer_link_points_to_head(self) -> None:
