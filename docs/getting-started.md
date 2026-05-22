@@ -61,12 +61,12 @@ act_space = ActionSpace.continuous(
 print(act_space.explain())
 ```
 
-## Step 5 — Run an adaptation loop (preview)
+## Step 5 — Run an adaptation loop
 
-> **Note:** `DreamerV3Adapter` is available after **Epic 3**. The code below previews the intended API.
+> **Note:** `DreamerV3Adapter` implements a Dreamer-inspired RSSM architecture. It is a prototype adapter, not a wrapper around the original DreamerV3 codebase. See [PRODUCT_THESIS.md](../PRODUCT_THESIS.md) for details on what this means for your use case.
 
 ```python
-from physlink.adapters import DreamerV3Adapter  # available after Epic 3
+from physlink.adapters import DreamerV3Adapter
 
 adapter = DreamerV3Adapter(
     obs_space=obs_space,

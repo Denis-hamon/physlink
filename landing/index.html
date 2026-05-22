@@ -756,7 +756,7 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
           </svg>
         </div>
         <div class="feat-title">Auto-checkpoint</div>
-        <p class="feat-desc">Safetensors checkpoint every N steps, metadata embedded. Colab session disconnects mid-run? PhysLink resumes from the last save <em>automatically</em> — zero GPU hours lost.</p>
+        <p class="feat-desc">Safetensors checkpoint every N steps, metadata embedded. Colab session disconnects mid-run? Load the last checkpoint in one call and continue — no manual hunt for your save file.</p>
         <div class="feat-snippet">adapter.<span class="s-fn">fit</span>(traj, steps=<span class="s-nm">10_000</span>)<br><span class="s-cm"># → step_1000.safetensors saved</span></div>
       </div>
 
@@ -901,7 +901,7 @@ adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</sp
         <tbody>
           <tr><td>Env diagnostics</td><td class="c-bad">Debug silent OOM at step 8 000</td><td class="c-good"><code>physlink.doctor()</code></td></tr>
           <tr><td>Space definitions</td><td class="c-bad">Write framework-specific mappings per adapter</td><td class="c-good"><code>ObservationSpace.from_proprioception()</code></td></tr>
-          <tr><td>Session disconnect</td><td class="c-bad">Lose 3h of T4 training</td><td class="c-good">Resume from last checkpoint automatically</td></tr>
+          <tr><td>Session disconnect</td><td class="c-bad">Lose 3h of T4 training</td><td class="c-good">One-call checkpoint restore, no lost progress</td></tr>
           <tr><td>Physics check</td><td class="c-bad">Manually verify energy conservation</td><td class="c-good"><code>compliance_report()</code></td></tr>
           <tr><td>Model diagnosis</td><td class="c-bad">Stare at loss curves</td><td class="c-good">Triptych GIF — Imagination / Real / Diff</td></tr>
           <tr><td>Total</td><td class="c-bad bad-hi">3–5 days</td><td class="c-good good-hi">1 afternoon</td></tr>
