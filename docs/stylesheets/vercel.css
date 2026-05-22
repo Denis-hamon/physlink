@@ -80,15 +80,15 @@ code, pre, kbd, samp {
   font-family: var(--vl-mono) !important;
 }
 
-/* ── HEADER ── Black bar, matches landing page nav */
+/* ── HEADER ── White bar */
 .md-header {
-  background-color: #000000 !important;
-  border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid var(--vl-border) !important;
   box-shadow: none !important;
 }
 
 .md-header[data-md-state="shadow"] {
-  box-shadow: none !important;
+  box-shadow: 0 1px 0 var(--vl-border) !important;
 }
 
 .md-header__inner {
@@ -100,23 +100,23 @@ code, pre, kbd, samp {
   font-weight: 600;
   font-size: 15px;
   letter-spacing: -0.02em;
-  color: #ffffff !important;
+  color: #000000 !important;
 }
 
 .md-header__button.md-icon {
-  color: rgba(255,255,255,0.6) !important;
+  color: var(--vl-text-2) !important;
 }
 
 .md-header__button.md-icon:hover {
-  color: #ffffff !important;
-  background-color: rgba(255,255,255,0.08);
+  color: var(--vl-text) !important;
+  background-color: var(--vl-elevated);
   border-radius: 6px;
 }
 
 /* ── NAVIGATION TABS ── */
 .md-tabs {
-  background-color: #000000 !important;
-  border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid var(--vl-border) !important;
   box-shadow: none !important;
 }
 
@@ -127,7 +127,7 @@ code, pre, kbd, samp {
 .md-tabs__link {
   font-family: var(--vl-sans) !important;
   font-size: 13px !important;
-  color: rgba(255,255,255,0.55) !important;
+  color: var(--vl-text-2) !important;
   opacity: 1 !important;
   padding: 0 10px;
   border-radius: 6px;
@@ -135,45 +135,44 @@ code, pre, kbd, samp {
 }
 
 .md-tabs__link:hover {
-  color: #ffffff !important;
-  background: rgba(255,255,255,0.08);
+  color: var(--vl-text) !important;
+  background: var(--vl-elevated);
 }
 
 .md-tabs__link--active {
-  color: #ffffff !important;
+  color: #000000 !important;
   font-weight: 500;
 }
 
 .md-tabs__indicator {
-  background-color: #ffffff !important;
+  background-color: #000000 !important;
   height: 1px !important;
 }
 
 /* ── SEARCH ── */
 .md-search__form {
-  background-color: rgba(255,255,255,0.1) !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
+  background-color: var(--vl-elevated) !important;
+  border: 1px solid var(--vl-border-hi) !important;
   border-radius: 6px !important;
   box-shadow: none !important;
 }
 
 .md-search__form:focus-within {
-  background-color: rgba(255,255,255,0.14) !important;
-  border-color: rgba(255,255,255,0.3) !important;
+  border-color: rgba(0,0,0,0.3) !important;
 }
 
 .md-search__input {
   font-family: var(--vl-sans) !important;
   font-size: 14px;
-  color: #ffffff !important;
+  color: var(--vl-text) !important;
 }
 
 .md-search__input::placeholder {
-  color: rgba(255,255,255,0.45) !important;
+  color: var(--vl-text-3) !important;
 }
 
 .md-search__icon {
-  color: rgba(255,255,255,0.55) !important;
+  color: var(--vl-text-2) !important;
 }
 
 .md-search-result {
@@ -572,14 +571,15 @@ code, pre, kbd, samp {
   margin: 36px 0;
 }
 
-/* ── FOOTER ── Black footer, mirrors header */
+/* ── FOOTER ── White footer */
 .md-footer {
-  background-color: #000000 !important;
-  border-top: none;
+  background-color: #ffffff !important;
+  border-top: 1px solid var(--vl-border);
 }
 
 .md-footer-meta {
-  background-color: #000000 !important;
+  background-color: var(--vl-surface) !important;
+  border-top: 1px solid var(--vl-border);
 }
 
 .md-footer-meta__inner {
@@ -587,39 +587,39 @@ code, pre, kbd, samp {
 }
 
 .md-footer__link {
-  color: rgba(255,255,255,0.55) !important;
+  color: var(--vl-text-2) !important;
   transition: color 0.15s;
 }
 
 .md-footer__link:hover {
-  color: #ffffff !important;
+  color: var(--vl-text) !important;
 }
 
 .md-footer__title {
   font-family: var(--vl-sans);
   font-size: 14px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--vl-text);
 }
 
 .md-footer__direction {
   font-size: 11px;
-  color: rgba(255,255,255,0.35) !important;
+  color: var(--vl-text-3) !important;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 /* ── SCROLL TO TOP ── */
 .md-top {
-  background-color: #111111 !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  color: rgba(255,255,255,0.7) !important;
-  box-shadow: none !important;
+  background-color: #ffffff !important;
+  border: 1px solid var(--vl-border-hi) !important;
+  color: var(--vl-text-2) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
   border-radius: 128px !important;
 }
 
 .md-top:hover {
-  color: #ffffff !important;
+  color: var(--vl-text) !important;
 }
 
 /* ── TAGS ── */

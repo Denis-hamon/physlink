@@ -18,7 +18,7 @@ theme:
     - navigation.top
   palette:
     scheme: default
-    primary: black
+    primary: white
     accent: black
 
 extra_css:
