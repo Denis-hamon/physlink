@@ -1,4 +1,11 @@
-.claude/.story-automator-active
+# AI agent scaffolding — not part of the product
+.agents/
+.claude/
+_bmad/
+_bmad-output/
+.planning/
+
+# Build / runtime artifacts
 site/
 __pycache__/
 *.pyc
@@ -6,3 +13,4 @@ __pycache__/
 physlink_checkpoints/
 .venv/
 venv/
+.DS_Store

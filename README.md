@@ -12,9 +12,9 @@
 <p align="center">
   <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb"><strong>Quick Start →</strong></a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
-  <a href="https://Denis-hamon.github.io/physlink/lab-adoption-guide/"><strong>Evaluate for your lab →</strong></a>
+  <a href="docs/lab-adoption-guide.md"><strong>Evaluate for your lab →</strong></a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
-  <a href="https://Denis-hamon.github.io/physlink/domain-scientists/"><strong>For Domain Scientists →</strong></a>
+  <a href="docs/domain-scientists.md"><strong>For Domain Scientists →</strong></a>
 </p>
 
 ---
@@ -25,7 +25,7 @@ Backend-agnostic adapter library for physical simulation ML.
 
 Plug your robot trajectories into a Dreamer-inspired world model adapter without writing boilerplate space definitions, checkpoint logic, or compliance checks. PhysLink handles the plumbing — you keep the science.
 
-> **Note:** `DreamerV3Adapter` implements a Dreamer-like RSSM architecture (encoder -> GRU -> prior/posterior -> actor/critic) and is architecturally inspired by [DreamerV3](https://github.com/danijar/dreamerv3). It is a prototype, not a wrapper around the original DreamerV3 codebase.
+> **Note:** `DreamerV3Adapter` implements a Dreamer-like RSSM architecture (encoder → GRU → prior/posterior → actor/critic) and is architecturally inspired by [DreamerV3](https://github.com/danijar/dreamerv3). It is a prototype, not a wrapper around the original DreamerV3 codebase.
 
 Read the [product thesis behind PhysLink](PRODUCT_THESIS.md): why world-model tooling needs explicit interfaces for data, actions, domain constraints, evaluation, and trust.
 

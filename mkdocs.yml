@@ -24,6 +24,9 @@ theme:
 extra_css:
   - stylesheets/vercel.css
 
+hooks:
+  - docs/hooks.py
+
 plugins:
   - search
   - mkdocstrings:
@@ -35,6 +38,10 @@ plugins:
             show_source: false
             show_root_heading: true
             show_root_full_path: false
+            show_signature_annotations: true
+            members_order: source
+            show_if_no_docstring: false
+            docstring_section_style: spacy
 
 nav:
   - Home: index.md

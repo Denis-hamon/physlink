@@ -9,7 +9,7 @@
   <meta property="og:description" content="Bridge physical simulators and DreamerV3 in one afternoon.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:        #000000;
@@ -20,7 +20,7 @@
   --border-focus:  rgba(255,255,255,0.28);
   --text:   #ededed;
   --text-2: #888888;
-  --text-3: #444444;
+  --text-3: #777777;
   --r-sm: 4px; --r-md: 6px; --r-lg: 8px; --r-xl: 12px; --r-pill: 128px;
   --sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
   --mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
@@ -370,11 +370,11 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
       <li><a href="./getting-started/">Docs</a></li>
     </ul>
     <div class="nav-actions">
-      <a href="https://github.com/Denis-hamon/physlink" class="btn-ghost" target="_blank">
+      <a href="https://github.com/Denis-hamon/physlink" class="btn-ghost" target="_blank" rel="noopener noreferrer">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
         GitHub
       </a>
-      <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb" class="btn-white" target="_blank">Open in Colab</a>
+      <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb" class="btn-white" target="_blank" rel="noopener noreferrer">Open in Colab</a>
     </div>
   </div>
 </nav>
@@ -385,14 +385,14 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
   <h1>From simulator<br><em>to trained model.</em></h1>
   <p class="hero-sub">The adapter layer that bridges your physics simulator and DreamerV3. One library. No boilerplate. One afternoon.</p>
   <div class="hero-actions">
-    <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb" class="btn-hero-primary" target="_blank">
+    <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb" class="btn-hero-primary" target="_blank" rel="noopener noreferrer">
       Open in Colab
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
     </a>
     <a href="./getting-started/" class="btn-hero-secondary">Documentation</a>
     <a href="./domain-scientists/" class="btn-hero-secondary">Domain Scientists →</a>
   </div>
-  <div class="install-pill" onclick="copyInstall(this)" title="Copy">
+  <div class="install-pill" role="button" tabindex="0" onclick="copyInstall(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();copyInstall(this)}" title="Copy">
     <span class="ps">$</span>
     <span class="cmd">pip install physlink</span>
     <button class="copy-btn" aria-label="Copy">
@@ -469,122 +469,181 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
       <p class="sec-desc">A thin but complete adapter layer. All the plumbing between the physics world and the RL world — so you focus on the science.</p>
     </div>
     <div class="arch-card reveal">
-      <svg viewBox="0 0 1100 480" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 1100 440" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
-          <linearGradient id="ag-lfade" x1="0" y1="330" x2="0" y2="460" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#0a0a0a" stop-opacity="0"/>
-            <stop offset="100%" stop-color="#0a0a0a" stop-opacity="1"/>
-          </linearGradient>
+          <filter id="pl-glow">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
           <style>
-            .af-dash{stroke-dasharray:5 5;animation:af-d 1s linear infinite}
-            @keyframes af-d{to{stroke-dashoffset:-20}}
-            .af-pulse{animation:af-p 2.8s ease-in-out infinite}
-            @keyframes af-p{0%,100%{opacity:.35}50%{opacity:.85}}
+            .pl-pulse{animation:pl-p 3s ease-in-out infinite}
+            @keyframes pl-p{0%,100%{opacity:.14}50%{opacity:.5}}
           </style>
+          <!-- Left → Center paths -->
+          <path id="lc0" d="M193,150 L270,150"/>
+          <path id="lc1" d="M193,198 L270,198"/>
+          <path id="lc2" d="M193,294 L270,294"/>
+          <path id="lc3" d="M193,342 L270,342"/>
+          <!-- Center → Right paths -->
+          <path id="cr0" d="M830,150 L908,150"/>
+          <path id="cr1" d="M830,198 L908,198"/>
+          <path id="cr2" d="M830,294 L908,294"/>
+          <path id="cr3" d="M830,342 L908,342"/>
         </defs>
 
-        <!-- ══ LEFT PANEL: Without PhysLink ══ -->
-        <rect x="0" y="0" width="504" height="480" rx="12" fill="#0a0a0a" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-        <rect x="1" y="1" width="502" height="36" rx="11" fill="rgba(255,255,255,0.022)"/>
-        <rect x="1" y="24" width="502" height="13" fill="rgba(255,255,255,0.022)"/>
-        <circle cx="18" cy="18" r="5" fill="rgba(230,80,80,0.22)"/>
-        <circle cx="34" cy="18" r="5" fill="rgba(230,180,50,0.18)"/>
-        <circle cx="50" cy="18" r="5" fill="rgba(80,200,80,0.12)"/>
-        <text x="252" y="23" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="10" font-weight="500" fill="rgba(255,255,255,0.16)" letter-spacing="0.1em">WITHOUT PHYSLINK</text>
-        <g font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="10.5" fill="rgba(255,255,255,0.17)">
-          <text x="18" y="56">import gymnasium as gym</text>
-          <text x="18" y="71">import torch, numpy as np, json, os, sys</text>
-          <text x="18" y="86">from dreamer import DreamerV3Trainer, WorldModel</text>
-          <text x="18" y="101">from dreamer.spaces import BoxSpace, DictSpace</text>
-          <text x="18" y="116">from dreamer.utils import normalize_obs, wrap_action</text>
-          <text x="18" y="131">from dreamer.compat import check_cuda_version</text>
-          <text x="18" y="149" fill="rgba(255,255,255,0.07)"># ── Environment diagnostics ─────────────────</text>
-          <text x="18" y="164">import subprocess, psutil, platform</text>
-          <text x="18" y="179">py_ver = sys.version_info</text>
-          <text x="18" y="194">if py_ver &lt; (3, 10):</text>
-          <text x="18" y="209">    raise RuntimeError(f"Python 3.10+ required")</text>
-          <text x="18" y="224">if not torch.cuda.is_available():</text>
-          <text x="18" y="239">    raise EnvironmentError("CUDA not available")</text>
-          <text x="18" y="254">vram = torch.cuda.get_device_properties(0).total_memory</text>
-          <text x="18" y="269">if vram &lt; 8 * 1024**3:</text>
-          <text x="18" y="284">    raise MemoryError(f"Need &gt;=8 GB VRAM")</text>
-          <text x="18" y="302" fill="rgba(255,255,255,0.07)"># ── Space definitions ────────────────────────</text>
-          <text x="18" y="317">obs_space = DictSpace({</text>
-          <text x="18" y="332">    "joint_pos": BoxSpace(-3.14, 3.14, (7,), dtype=np.float32),</text>
-          <text x="18" y="347">    "joint_vel": BoxSpace(-10.0, 10.0, (7,), dtype=np.float32),</text>
-          <text x="18" y="362">    "ee_pos":    BoxSpace(-2.0, 2.0, (3,), dtype=np.float32),</text>
-          <text x="18" y="377">})</text>
-          <text x="18" y="392">act_space = BoxSpace(-1.0, 1.0, (7,), dtype=np.float32)</text>
-          <text x="18" y="407">trainer = DreamerV3Trainer(obs_space, act_space, ...)</text>
-        </g>
-        <rect x="0" y="330" width="504" height="150" fill="url(#ag-lfade)"/>
-        <text x="252" y="464" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="10.5" fill="rgba(255,255,255,0.2)">~200 lines of manual plumbing</text>
+        <!-- ── Column labels ── -->
+        <text x="111" y="36" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="9" font-weight="600" letter-spacing=".14em" fill="rgba(255,255,255,0.22)">SIMULATION BACKENDS</text>
+        <text x="989" y="36" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="9" font-weight="600" letter-spacing=".14em" fill="rgba(255,255,255,0.22)">RL-READY OUTPUTS</text>
 
-        <!-- ══ CENTER DIVIDER ══ -->
-        <line x1="550" y1="0" x2="550" y2="480" stroke="rgba(255,255,255,0.03)" stroke-width="30"/>
-        <line x1="550" y1="0" x2="550" y2="480" stroke="rgba(255,255,255,0.05)" stroke-width="16"/>
-        <line x1="550" y1="0" x2="550" y2="480" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
-        <line x1="550" y1="20"  x2="550" y2="205" stroke="rgba(255,255,255,0.32)" stroke-width="1" class="af-dash af-pulse"/>
-        <line x1="550" y1="278" x2="550" y2="462" stroke="rgba(255,255,255,0.32)" stroke-width="1" class="af-dash af-pulse" style="animation-delay:-0.5s"/>
-        <rect x="505" y="207" width="90" height="68" rx="10" fill="#111" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
-        <text x="550" y="232" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="12" font-weight="700" fill="#fff" letter-spacing="-0.025em">PhysLink</text>
-        <text x="550" y="252" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.3)">→</text>
-        <text x="550" y="267" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="9" fill="rgba(255,255,255,0.22)" letter-spacing="0.04em">&#x2212;97% boilerplate</text>
-        <!-- Traveling data particles -->
-        <circle cx="504" cy="239" r="2.5" fill="rgba(255,255,255,0.78)">
-          <animateTransform attributeName="transform" type="translate" from="0,0" to="92,0" dur="1.6s" repeatCount="indefinite" begin="0s"/>
-          <animate attributeName="opacity" values="0;0.78;0.78;0" keyTimes="0;0.1;0.9;1" dur="1.6s" repeatCount="indefinite" begin="0s"/>
-        </circle>
-        <circle cx="504" cy="239" r="2.5" fill="rgba(255,255,255,0.78)">
-          <animateTransform attributeName="transform" type="translate" from="0,0" to="92,0" dur="1.6s" repeatCount="indefinite" begin="-0.53s"/>
-          <animate attributeName="opacity" values="0;0.78;0.78;0" keyTimes="0;0.1;0.9;1" dur="1.6s" repeatCount="indefinite" begin="-0.53s"/>
-        </circle>
-        <circle cx="504" cy="239" r="2.5" fill="rgba(255,255,255,0.78)">
-          <animateTransform attributeName="transform" type="translate" from="0,0" to="92,0" dur="1.6s" repeatCount="indefinite" begin="-1.07s"/>
-          <animate attributeName="opacity" values="0;0.78;0.78;0" keyTimes="0;0.1;0.9;1" dur="1.6s" repeatCount="indefinite" begin="-1.07s"/>
-        </circle>
+        <!-- ── Left: Source nodes ── -->
+        <rect x="30" y="130" width="163" height="40" rx="7" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <circle cx="49" cy="150" r="3.5" fill="#3ecf8e"/>
+        <text x="62" y="146" font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="11.5" font-weight="600" fill="rgba(255,255,255,0.78)">MuJoCo</text>
+        <text x="62" y="162" font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="9.5" fill="rgba(255,255,255,0.3)">physics engine</text>
 
-        <!-- ══ RIGHT PANEL: With PhysLink ══ -->
-        <rect x="596" y="0" width="504" height="480" rx="12" fill="#0f0f0f" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-        <rect x="596" y="0" width="504" height="3.5" rx="2" fill="rgba(255,255,255,0.88)"/>
-        <rect x="597" y="3.5" width="502" height="34" fill="rgba(255,255,255,0.025)"/>
-        <rect x="597" y="24" width="502" height="14" fill="rgba(255,255,255,0.025)"/>
-        <circle cx="617" cy="20" r="5" fill="rgba(230,80,80,0.28)"/>
-        <circle cx="633" cy="20" r="5" fill="rgba(230,180,50,0.24)"/>
-        <circle cx="649" cy="20" r="5" fill="rgba(80,200,80,0.28)"/>
-        <text x="848" y="25" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="10" font-weight="500" fill="rgba(255,255,255,0.42)" letter-spacing="0.1em">WITH PHYSLINK</text>
-        <g font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="12.5">
-          <text x="616" y="64">
-            <tspan fill="rgba(255,255,255,0.32)">import</tspan><tspan fill="rgba(255,255,255,0.82)"> physlink</tspan>
-          </text>
-          <text x="616" y="112">
-            <tspan fill="rgba(255,255,255,0.65)">physlink.</tspan><tspan fill="#fff" font-weight="700">doctor</tspan><tspan fill="rgba(255,255,255,0.65)">()</tspan>
-          </text>
-          <text x="616" y="130" font-size="10.5" fill="rgba(255,255,255,0.27)"># &#x2192; GO &#x2713;  T4 · 14.8 GB · ~8h remaining</text>
-          <text x="616" y="176">
-            <tspan fill="rgba(255,255,255,0.5)">adapter = physlink.</tspan><tspan fill="#fff" font-weight="700">adapt</tspan><tspan fill="rgba(255,255,255,0.65)">(sim)</tspan>
-          </text>
-          <text x="616" y="194" font-size="10.5" fill="rgba(255,255,255,0.27)"># obs(14) · act(7) · spaces normalized &#x2713;</text>
-          <text x="616" y="240">
-            <tspan fill="rgba(255,255,255,0.65)">trainer.</tspan><tspan fill="#fff" font-weight="700">train</tspan><tspan fill="rgba(255,255,255,0.65)">(adapter)</tspan>
-          </text>
-          <text x="616" y="258" font-size="10.5" fill="rgba(255,255,255,0.27)"># auto-checkpoint · compliance watch</text>
-          <text x="616" y="304">
-            <tspan fill="rgba(255,255,255,0.65)">adapter.</tspan><tspan fill="#fff" font-weight="700">triptych</tspan><tspan fill="rgba(255,255,255,0.65)">()</tspan>
-          </text>
-          <text x="616" y="322" font-size="10.5" fill="rgba(255,255,255,0.27)"># &#x2192; output.gif  imagination · real · diff</text>
-        </g>
-        <line x1="616" y1="344" x2="1082" y2="344" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-        <rect x="616" y="358" width="464" height="82" rx="10" fill="rgba(255,255,255,0.022)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
-        <rect x="630" y="371" width="82" height="26" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-        <text x="671" y="388" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" font-weight="600" fill="rgba(255,255,255,0.62)">GO &#x2713;</text>
-        <rect x="722" y="371" width="98" height="26" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-        <text x="771" y="388" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" font-weight="600" fill="rgba(255,255,255,0.62)">spaces &#x2713;</text>
-        <rect x="830" y="371" width="132" height="26" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-        <text x="896" y="388" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" font-weight="600" fill="rgba(255,255,255,0.62)">.safetensors &#x2713;</text>
-        <rect x="972" y="371" width="96" height="26" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-        <text x="1020" y="388" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" font-weight="600" fill="rgba(255,255,255,0.62)">PASS &#x2713;</text>
-        <text x="848" y="424" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="11.5" fill="rgba(255,255,255,0.28)">5 primitives. Everything else is handled.</text>
+        <rect x="30" y="178" width="163" height="40" rx="7" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <circle cx="49" cy="198" r="3.5" fill="#3ecf8e"/>
+        <text x="62" y="194" font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="11.5" font-weight="600" fill="rgba(255,255,255,0.78)">PyBullet</text>
+        <text x="62" y="210" font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="9.5" fill="rgba(255,255,255,0.3)">rigid-body sim</text>
+
+        <rect x="30" y="274" width="163" height="40" rx="7" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+        <circle cx="49" cy="294" r="3.5" fill="rgba(255,255,255,0.3)"/>
+        <text x="62" y="290" font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="11.5" font-weight="600" fill="rgba(255,255,255,0.52)">Custom Sim</text>
+        <text x="62" y="306" font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="9.5" fill="rgba(255,255,255,0.22)">any Gym env</text>
+
+        <rect x="30" y="322" width="163" height="40" rx="7" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+        <circle cx="49" cy="342" r="3.5" fill="rgba(255,255,255,0.3)"/>
+        <text x="62" y="338" font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="11.5" font-weight="600" fill="rgba(255,255,255,0.52)">Real Robot</text>
+        <text x="62" y="354" font-family="ui-monospace,'Cascadia Code',Menlo,monospace" font-size="9.5" fill="rgba(255,255,255,0.22)">hardware bridge</text>
+
+        <!-- ── Connectors: Left → Center ── -->
+        <line x1="193" y1="150" x2="270" y2="150" stroke="rgba(62,207,142,0.28)" stroke-width="1" stroke-dasharray="3 4"/>
+        <line x1="193" y1="198" x2="270" y2="198" stroke="rgba(62,207,142,0.28)" stroke-width="1" stroke-dasharray="3 4"/>
+        <line x1="193" y1="294" x2="270" y2="294" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="3 4"/>
+        <line x1="193" y1="342" x2="270" y2="342" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="3 4"/>
+
+        <!-- ── PhysLink outer pulse ring ── -->
+        <rect x="258" y="52" width="584" height="354" rx="17" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="10" class="pl-pulse" filter="url(#pl-glow)"/>
+
+        <!-- ── PhysLink main block ── -->
+        <rect x="270" y="64" width="560" height="330" rx="13" fill="#111111" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+        <rect x="270" y="64" width="560" height="3" rx="2" fill="rgba(255,255,255,0.88)"/>
+
+        <text x="550" y="92" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="15" font-weight="700" fill="#ffffff" letter-spacing="-.03em">PhysLink</text>
+        <text x="550" y="110" text-anchor="middle" font-family="Geist,-apple-system,sans-serif" font-size="10.5" fill="rgba(255,255,255,0.32)" letter-spacing=".015em">adapter layer · &#x2212;97% boilerplate</text>
+        <line x1="290" y1="121" x2="810" y2="121" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+        <!-- Module Row 1: doctor() -->
+        <rect x="282" y="130" width="536" height="40" rx="6" fill="rgba(255,255,255,0.028)"/>
+        <rect x="282" y="130" width="3" height="40" rx="1.5" fill="#3ecf8e"/>
+        <text x="298" y="146" font-family="Geist,-apple-system,sans-serif" font-size="11.5" font-weight="600" fill="#ededed">doctor()</text>
+        <text x="298" y="161" font-family="Geist,-apple-system,sans-serif" font-size="9.5" fill="rgba(255,255,255,0.38)">GPU · VRAM · CUDA version · driver sanity</text>
+        <text x="806" y="153" text-anchor="end" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#3ecf8e">GO &#x2713;</text>
+
+        <!-- Module Row 2: adapt() -->
+        <rect x="282" y="178" width="536" height="40" rx="6" fill="rgba(255,255,255,0.022)"/>
+        <rect x="282" y="178" width="3" height="40" rx="1.5" fill="#79c0ff"/>
+        <text x="298" y="194" font-family="Geist,-apple-system,sans-serif" font-size="11.5" font-weight="600" fill="#ededed">adapt()</text>
+        <text x="298" y="209" font-family="Geist,-apple-system,sans-serif" font-size="9.5" fill="rgba(255,255,255,0.38)">obs/action spaces · dtype · device pinning</text>
+        <text x="806" y="201" text-anchor="end" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#79c0ff">spaces &#x2713;</text>
+
+        <!-- Module Row 3: checkpoint() — internal -->
+        <rect x="282" y="226" width="536" height="40" rx="6" fill="rgba(255,255,255,0.016)"/>
+        <rect x="282" y="226" width="3" height="40" rx="1.5" fill="#d2a8ff"/>
+        <text x="298" y="242" font-family="Geist,-apple-system,sans-serif" font-size="11.5" font-weight="600" fill="rgba(255,255,255,0.72)">checkpoint()</text>
+        <text x="298" y="257" font-family="Geist,-apple-system,sans-serif" font-size="9.5" fill="rgba(255,255,255,0.32)">.safetensors · auto-resume · cloud sync</text>
+        <text x="806" y="249" text-anchor="end" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#d2a8ff">.safetensors &#x2713;</text>
+
+        <!-- Module Row 4: compliance() -->
+        <rect x="282" y="274" width="536" height="40" rx="6" fill="rgba(255,255,255,0.016)"/>
+        <rect x="282" y="274" width="3" height="40" rx="1.5" fill="#ff7b72"/>
+        <text x="298" y="290" font-family="Geist,-apple-system,sans-serif" font-size="11.5" font-weight="600" fill="rgba(255,255,255,0.72)">compliance()</text>
+        <text x="298" y="305" font-family="Geist,-apple-system,sans-serif" font-size="9.5" fill="rgba(255,255,255,0.32)">policy validation · seed reproducibility</text>
+        <text x="806" y="297" text-anchor="end" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#ff7b72">PASS &#x2713;</text>
+
+        <!-- Module Row 5: triptych() -->
+        <rect x="282" y="322" width="536" height="40" rx="6" fill="rgba(255,255,255,0.016)"/>
+        <rect x="282" y="322" width="3" height="40" rx="1.5" fill="#f0a14f"/>
+        <text x="298" y="338" font-family="Geist,-apple-system,sans-serif" font-size="11.5" font-weight="600" fill="rgba(255,255,255,0.72)">triptych()</text>
+        <text x="298" y="353" font-family="Geist,-apple-system,sans-serif" font-size="9.5" fill="rgba(255,255,255,0.32)">imagination · real · diff &#x2192; output.gif</text>
+        <text x="806" y="345" text-anchor="end" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#f0a14f">LIVE &#x2713;</text>
+
+        <!-- ── Connectors: Center → Right ── -->
+        <line x1="830" y1="150" x2="908" y2="150" stroke="rgba(62,207,142,0.28)" stroke-width="1" stroke-dasharray="3 4"/>
+        <line x1="830" y1="198" x2="908" y2="198" stroke="rgba(62,207,142,0.28)" stroke-width="1" stroke-dasharray="3 4"/>
+        <line x1="830" y1="294" x2="908" y2="294" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="3 4"/>
+        <line x1="830" y1="342" x2="908" y2="342" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="3 4"/>
+
+        <!-- ── Right: Output nodes ── -->
+        <rect x="908" y="130" width="163" height="40" rx="7" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+        <text x="922" y="146" font-family="Geist,-apple-system,sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.72)">Environment</text>
+        <text x="922" y="161" font-family="Geist,-apple-system,sans-serif" font-size="9.5" font-weight="600" fill="#3ecf8e">gym.Env compatible &#x2713;</text>
+
+        <rect x="908" y="178" width="163" height="40" rx="7" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+        <text x="922" y="194" font-family="Geist,-apple-system,sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.72)">Spaces</text>
+        <text x="922" y="209" font-family="Geist,-apple-system,sans-serif" font-size="9.5" font-weight="600" fill="#3ecf8e">obs + act normalized &#x2713;</text>
+
+        <rect x="908" y="274" width="163" height="40" rx="7" fill="rgba(255,255,255,0.028)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <text x="922" y="290" font-family="Geist,-apple-system,sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.55)">Checkpoint</text>
+        <text x="922" y="305" font-family="Geist,-apple-system,sans-serif" font-size="9.5" font-weight="600" fill="#3ecf8e">.safetensors ready &#x2713;</text>
+
+        <rect x="908" y="322" width="163" height="40" rx="7" fill="rgba(255,255,255,0.028)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <text x="922" y="338" font-family="Geist,-apple-system,sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.55)">Compliance</text>
+        <text x="922" y="353" font-family="Geist,-apple-system,sans-serif" font-size="9.5" font-weight="600" fill="#3ecf8e">policy validated &#x2713;</text>
+
+        <!-- ── Animated particles ── -->
+        <!-- MuJoCo → doctor (green, fast) -->
+        <circle r="2.5" fill="rgba(62,207,142,0.95)">
+          <animateMotion dur="1.3s" repeatCount="indefinite" begin="0s"><mpath href="#lc0"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="1.3s" repeatCount="indefinite" begin="0s"/>
+        </circle>
+        <circle r="2.5" fill="rgba(62,207,142,0.95)">
+          <animateMotion dur="1.3s" repeatCount="indefinite" begin="-0.65s"><mpath href="#lc0"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="1.3s" repeatCount="indefinite" begin="-0.65s"/>
+        </circle>
+        <!-- PyBullet → adapt (blue) -->
+        <circle r="2.5" fill="rgba(121,192,255,0.9)">
+          <animateMotion dur="1.5s" repeatCount="indefinite" begin="-0.25s"><mpath href="#lc1"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="1.5s" repeatCount="indefinite" begin="-0.25s"/>
+        </circle>
+        <circle r="2.5" fill="rgba(121,192,255,0.9)">
+          <animateMotion dur="1.5s" repeatCount="indefinite" begin="-1.0s"><mpath href="#lc1"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="1.5s" repeatCount="indefinite" begin="-1.0s"/>
+        </circle>
+        <!-- Custom Sim (dim, slower) -->
+        <circle r="2" fill="rgba(255,255,255,0.45)">
+          <animateMotion dur="2s" repeatCount="indefinite" begin="-0.8s"><mpath href="#lc2"/></animateMotion>
+          <animate attributeName="opacity" values="0;0.45;0.45;0" keyTimes="0;0.12;0.88;1" dur="2s" repeatCount="indefinite" begin="-0.8s"/>
+        </circle>
+        <!-- Real Robot (dim, slowest) -->
+        <circle r="2" fill="rgba(255,255,255,0.35)">
+          <animateMotion dur="2.2s" repeatCount="indefinite" begin="-1.3s"><mpath href="#lc3"/></animateMotion>
+          <animate attributeName="opacity" values="0;0.35;0.35;0" keyTimes="0;0.12;0.88;1" dur="2.2s" repeatCount="indefinite" begin="-1.3s"/>
+        </circle>
+        <!-- Environment output (green) -->
+        <circle r="2.5" fill="rgba(62,207,142,0.95)">
+          <animateMotion dur="1.3s" repeatCount="indefinite" begin="-0.4s"><mpath href="#cr0"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="1.3s" repeatCount="indefinite" begin="-0.4s"/>
+        </circle>
+        <circle r="2.5" fill="rgba(62,207,142,0.95)">
+          <animateMotion dur="1.3s" repeatCount="indefinite" begin="-1.05s"><mpath href="#cr0"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="1.3s" repeatCount="indefinite" begin="-1.05s"/>
+        </circle>
+        <!-- Spaces output (blue) -->
+        <circle r="2.5" fill="rgba(121,192,255,0.9)">
+          <animateMotion dur="1.5s" repeatCount="indefinite" begin="-0.7s"><mpath href="#cr1"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.88;1" dur="1.5s" repeatCount="indefinite" begin="-0.7s"/>
+        </circle>
+        <!-- Checkpoint output (dim) -->
+        <circle r="2" fill="rgba(255,255,255,0.45)">
+          <animateMotion dur="1.8s" repeatCount="indefinite" begin="-0.2s"><mpath href="#cr2"/></animateMotion>
+          <animate attributeName="opacity" values="0;0.45;0.45;0" keyTimes="0;0.12;0.88;1" dur="1.8s" repeatCount="indefinite" begin="-0.2s"/>
+        </circle>
+        <!-- Compliance output (dim) -->
+        <circle r="2" fill="rgba(255,255,255,0.35)">
+          <animateMotion dur="2s" repeatCount="indefinite" begin="-1s"><mpath href="#cr3"/></animateMotion>
+          <animate attributeName="opacity" values="0;0.35;0.35;0" keyTimes="0;0.12;0.88;1" dur="2s" repeatCount="indefinite" begin="-1s"/>
+        </circle>
       </svg>
     </div>
   </div>
@@ -697,7 +756,7 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
           </svg>
         </div>
         <div class="feat-title">Auto-checkpoint</div>
-        <p class="feat-desc">Safetensors checkpoint every N steps, metadata embedded. Colab session disconnects mid-run? PhysLink resumes from the last save <em>automatically</em> — zero GPU hours lost.</p>
+        <p class="feat-desc">Safetensors checkpoint every N steps, metadata embedded. Colab session disconnects mid-run? Load the last checkpoint in one call and continue — no manual hunt for your save file.</p>
         <div class="feat-snippet">adapter.<span class="s-fn">fit</span>(traj, steps=<span class="s-nm">10_000</span>)<br><span class="s-cm"># → step_1000.safetensors saved</span></div>
       </div>
 
@@ -842,7 +901,7 @@ adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</sp
         <tbody>
           <tr><td>Env diagnostics</td><td class="c-bad">Debug silent OOM at step 8 000</td><td class="c-good"><code>physlink.doctor()</code></td></tr>
           <tr><td>Space definitions</td><td class="c-bad">Write framework-specific mappings per adapter</td><td class="c-good"><code>ObservationSpace.from_proprioception()</code></td></tr>
-          <tr><td>Session disconnect</td><td class="c-bad">Lose 3h of T4 training</td><td class="c-good">Resume from last checkpoint automatically</td></tr>
+          <tr><td>Session disconnect</td><td class="c-bad">Lose 3h of T4 training</td><td class="c-good">One-call checkpoint restore, no lost progress</td></tr>
           <tr><td>Physics check</td><td class="c-bad">Manually verify energy conservation</td><td class="c-good"><code>compliance_report()</code></td></tr>
           <tr><td>Model diagnosis</td><td class="c-bad">Stare at loss curves</td><td class="c-good">Triptych GIF — Imagination / Real / Diff</td></tr>
           <tr><td>Total</td><td class="c-bad bad-hi">3–5 days</td><td class="c-good good-hi">1 afternoon</td></tr>
@@ -866,7 +925,7 @@ adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</sp
           <li><div class="sn">4</div> Bring your trajectories. Adapt.</li>
         </ul>
         <div class="cta-btns">
-          <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb" class="btn-hero-primary" target="_blank">
+          <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb" class="btn-hero-primary" target="_blank" rel="noopener noreferrer">
             Open Quickstart Notebook
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
           </a>
@@ -903,10 +962,10 @@ adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</sp
     <div class="foot">
       <div class="foot-logo">PhysLink</div>
       <ul class="foot-links">
-        <li><a href="https://github.com/Denis-hamon/physlink" target="_blank">GitHub</a></li>
+        <li><a href="https://github.com/Denis-hamon/physlink" target="_blank" rel="noopener noreferrer">GitHub</a></li>
         <li><a href="./getting-started/">Docs</a></li>
-        <li><a href="https://github.com/Denis-hamon/physlink/blob/main/CHANGELOG.md" target="_blank">Changelog</a></li>
-        <li><a href="https://github.com/Denis-hamon/physlink/issues" target="_blank">Issues</a></li>
+        <li><a href="https://github.com/Denis-hamon/physlink/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">Changelog</a></li>
+        <li><a href="https://github.com/Denis-hamon/physlink/issues" target="_blank" rel="noopener noreferrer">Issues</a></li>
         <li><a href="./domain-scientists/">Domain Scientists</a></li>
       </ul>
       <div class="foot-copy">MIT License · v0.1.2</div>
