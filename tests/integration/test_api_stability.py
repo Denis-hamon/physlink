@@ -75,12 +75,33 @@ def test_story44_api_symbols() -> None:
     assert isinstance(report, physlink.ComplianceReport)
 
 
+def test_story45_final_api_symbols() -> None:
+    """Story 4.5: Epic 4 complete — verify EXACTLY 7 public symbols, no more, no less."""
+    import physlink
+    expected_all_7 = {
+        "ActionSpace",
+        "ComplianceReport",
+        "DreamerV3Adapter",
+        "ObservationSpace",
+        "PhysLinkError",
+        "doctor",
+        "register_invariant",
+    }
+    actual = set(physlink.__all__)
+    assert actual == expected_all_7, (
+        f"Epic 4 final API surface mismatch.\n"
+        f"  Got:      {sorted(actual)}\n"
+        f"  Expected: {sorted(expected_all_7)}\n"
+        f"  Fix:      physlink.__all__ must contain exactly these 7 symbols — "
+        f"no extras, no omissions (AR-10)"
+    )
+
+
 # DEPRECATION PROTOCOL (NFR-11):
 # When a public symbol or behaviour is deprecated, add a test here that:
 #   1. Calls the deprecated code path
 #   2. Asserts warnings.warn(..., DeprecationWarning) fires via pytest.warns(DeprecationWarning)
 #   3. References the CHANGELOG entry that documents the removal timeline
-# Epic 4 (Story 4.5) will update to assert the full 7-symbol set.
 
 
 class TestTopLevelNamespaceAccess:

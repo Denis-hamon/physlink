@@ -1763,3 +1763,59 @@ class TestComplianceReportStory44:
         assert len(violations) > 0
         names = [v["invariant_name"] for v in violations]
         assert names == sorted(names), "violations() must be sorted by invariant_name"
+
+
+class TestComplianceReportStory45:
+    """Story 4.5: residuals passed through to ComplianceReport via compliance_report()."""
+
+    def test_compliance_report_has_residuals_by_invariant(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "mass_conservation", lambda t: 0.001, tolerance=0.01)
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        assert isinstance(report._residuals_by_invariant, dict)
+        assert len(report._residuals_by_invariant) > 0
+
+    def test_compliance_report_residuals_match_invariant_name(self) -> None:
+        pytest.importorskip("torch")
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "mass_conservation", lambda t: 0.001, tolerance=0.01)
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        assert "mass_conservation" in report._residuals_by_invariant
+
+    def test_compliance_report_export_produces_valid_json(self, tmp_path: "Path") -> None:
+        pytest.importorskip("torch")
+        import json
+        from physlink.core.validation import register_invariant
+
+        adapter = _make_adapter_43()
+        register_invariant(adapter, "mass_conservation", lambda t: 0.001, tolerance=0.01)
+        adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+        report = adapter.compliance_report()
+        path = str(tmp_path / "report.json")
+        report.export(path)
+        with open(path) as f:
+            data = json.load(f)
+        assert isinstance(data, list)
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    def test_compliance_report_plot_runs_via_adapter(self) -> None:
+        pytest.importorskip("torch")
+        import matplotlib.pyplot as plt
+        from physlink.core.validation import register_invariant
+
+        plt.switch_backend("Agg")
+        try:
+            adapter = _make_adapter_43()
+            register_invariant(adapter, "mass_conservation", lambda t: 0.001, tolerance=0.01)
+            adapter.fit(_make_trajectories_43(5), steps=2, checkpoint_interval_steps=10)
+            report = adapter.compliance_report()
+            report.plot()
+        finally:
+            plt.close("all")

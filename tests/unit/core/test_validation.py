@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Generator
+from pathlib import Path
+
 import pytest
 
 from physlink import DreamerV3Adapter, ObservationSpace, ActionSpace
@@ -418,3 +422,171 @@ class TestComplianceReportPossibleCause:
         for v in report.violations():
             assert isinstance(v["possible_cause"], str)
             assert len(v["possible_cause"]) > 0
+
+
+def _make_report_with_residuals(
+    name: str = "mass",
+    residuals: list[float] | None = None,
+    violations: int = 0,
+) -> ComplianceReport:
+    if residuals is None:
+        residuals = [0.001, 0.002, 0.003]
+    stats = [{"name": name, "max_residual": max(residuals) if residuals else 0.0,
+              "threshold": 0.01, "violation_count": violations, "total": len(residuals)}]
+    vlist = [
+        {"invariant_name": name, "trajectory_idx": i, "residual": 0.05,
+         "possible_cause": f"residual 0.0500 exceeds tolerance 0.0100"}
+        for i in range(violations)
+    ]
+    return ComplianceReport(
+        _stats=stats,
+        _violation_list=vlist,
+        _residuals_by_invariant={name: residuals},
+    )
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+class TestComplianceReportPlot:
+    @pytest.fixture(autouse=True)
+    def _agg_backend(self) -> Generator[None, None, None]:
+        import matplotlib.pyplot as plt
+        plt.switch_backend("Agg")
+        yield
+        plt.close("all")
+
+    def test_plot_runs_without_error(self) -> None:
+        report = _make_report_with_residuals()
+        report.plot()
+
+    def test_plot_no_threshold_runs_without_error(self) -> None:
+        report = _make_report_with_residuals()
+        report.plot(show_threshold=False)
+
+    def test_plot_with_title_runs_without_error(self) -> None:
+        report = _make_report_with_residuals()
+        report.plot(title="My Title")
+
+    def test_plot_empty_stats_returns_early(self) -> None:
+        report = ComplianceReport(_stats=[], _violation_list=[])
+        result = report.plot()
+        assert result is None
+
+    def test_plot_no_residuals_shows_fallback(self) -> None:
+        stats = [{"name": "mass", "max_residual": 0.0, "threshold": 0.01, "violation_count": 0, "total": 0}]
+        report = ComplianceReport(_stats=stats, _violation_list=[], _residuals_by_invariant={})
+        report.plot()
+
+    def test_plot_deterministic(self) -> None:
+        report = _make_report_with_residuals()
+        report.plot()
+        report.plot()
+
+    def test_plot_multi_invariant(self) -> None:
+        stats = [
+            {"name": "mass", "max_residual": 0.002, "threshold": 0.01, "violation_count": 0, "total": 3},
+            {"name": "energy", "max_residual": 0.003, "threshold": 0.01, "violation_count": 0, "total": 3},
+        ]
+        report = ComplianceReport(
+            _stats=stats,
+            _violation_list=[],
+            _residuals_by_invariant={"mass": [0.001, 0.002, 0.003], "energy": [0.001, 0.002, 0.003]},
+        )
+        report.plot()
+
+
+class TestComplianceReportExport:
+    def test_export_creates_file(self, tmp_path: Path) -> None:
+        report = _make_report_with_residuals()
+        path = str(tmp_path / "report.json")
+        report.export(path)
+        import os
+        assert os.path.exists(path)
+
+    def test_export_valid_json(self, tmp_path: Path) -> None:
+        report = _make_report_with_residuals()
+        path = str(tmp_path / "report.json")
+        report.export(path)
+        with open(path) as f:
+            data = json.load(f)
+        assert isinstance(data, list)
+
+    def test_export_contains_required_fields(self, tmp_path: Path) -> None:
+        report = _make_report_with_residuals()
+        path = str(tmp_path / "report.json")
+        report.export(path)
+        with open(path) as f:
+            data = json.load(f)
+        entry = data[0]
+        for field in ("invariant_name", "status", "max_residual", "threshold",
+                      "violation_count", "total", "violations"):
+            assert field in entry
+
+    def test_export_pass_status(self, tmp_path: Path) -> None:
+        report = _make_report_with_residuals(violations=0)
+        path = str(tmp_path / "report.json")
+        report.export(path)
+        with open(path) as f:
+            data = json.load(f)
+        assert data[0]["status"] == "PASS"
+
+    def test_export_fail_status(self, tmp_path: Path) -> None:
+        report = _make_report_with_residuals(violations=1)
+        path = str(tmp_path / "report.json")
+        report.export(path)
+        with open(path) as f:
+            data = json.load(f)
+        assert data[0]["status"] == "FAIL"
+
+    def test_export_violation_details(self, tmp_path: Path) -> None:
+        report = _make_report_with_residuals(violations=1)
+        path = str(tmp_path / "report.json")
+        report.export(path)
+        with open(path) as f:
+            data = json.load(f)
+        assert len(data[0]["violations"]) == 1
+        v = data[0]["violations"][0]
+        assert "invariant_name" in v
+        assert "trajectory_idx" in v
+        assert "residual" in v
+        assert "possible_cause" in v
+
+    def test_export_zero_violations_empty_list(self, tmp_path: Path) -> None:
+        report = _make_report_with_residuals(violations=0)
+        path = str(tmp_path / "report.json")
+        report.export(path)
+        with open(path) as f:
+            data = json.load(f)
+        assert data[0]["violations"] == []
+
+    def test_export_multi_invariant(self, tmp_path: Path) -> None:
+        stats = [
+            {"name": "mass", "max_residual": 0.002, "threshold": 0.01, "violation_count": 0, "total": 3},
+            {"name": "energy", "max_residual": 0.003, "threshold": 0.01, "violation_count": 0, "total": 3},
+        ]
+        report = ComplianceReport(
+            _stats=stats,
+            _violation_list=[],
+            _residuals_by_invariant={"mass": [0.001, 0.002], "energy": [0.001, 0.003]},
+        )
+        path = str(tmp_path / "report.json")
+        report.export(path)
+        with open(path) as f:
+            data = json.load(f)
+        assert len(data) == 2
+
+    def test_export_deterministic(self, tmp_path: Path) -> None:
+        report = _make_report_with_residuals()
+        path1 = str(tmp_path / "r1.json")
+        path2 = str(tmp_path / "r2.json")
+        report.export(path1)
+        report.export(path2)
+        with open(path1) as f1, open(path2) as f2:
+            assert json.load(f1) == json.load(f2)
+
+    def test_export_empty_report(self, tmp_path: Path) -> None:
+        report = ComplianceReport(_stats=[], _violation_list=[])
+        path = str(tmp_path / "empty.json")
+        report.export(path)
+        with open(path) as f:
+            data = json.load(f)
+        assert data == []

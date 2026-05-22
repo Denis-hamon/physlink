@@ -114,6 +114,9 @@ class ComplianceReport:
         _violation_list: Per-violation dicts with keys:
             ``invariant_name`` (str), ``trajectory_idx`` (int),
             ``residual`` (float), ``possible_cause`` (str).
+        _residuals_by_invariant: Mapping from invariant name to the full list of
+            residuals (one per trajectory). Used by ``plot()`` to render histograms.
+            Defaults to ``None`` (stored as empty dict — backward compatible).
 
     Example:
         >>> report = adapter.compliance_report()
@@ -128,9 +131,15 @@ class ComplianceReport:
         self,
         _stats: list[dict[str, Any]],
         _violation_list: list[dict[str, Any]],
+        _residuals_by_invariant: dict[str, list[float]] | None = None,
     ) -> None:
         self._stats: list[dict[str, Any]] = list(_stats)
         self._violation_list: list[dict[str, Any]] = list(_violation_list)
+        self._residuals_by_invariant: dict[str, list[float]] = (
+            {k: list(v) for k, v in _residuals_by_invariant.items()}
+            if _residuals_by_invariant is not None
+            else {}
+        )
 
     def summary(self) -> str:
         """Return a human-readable compliance summary string.
@@ -183,3 +192,111 @@ class ComplianceReport:
             list(self._violation_list),
             key=lambda v: (v["invariant_name"], v["trajectory_idx"]),
         )
+
+    def plot(self, title: str = "", show_threshold: bool = True) -> None:
+        """Render a matplotlib histogram of invariant residuals inline.
+
+        Imports matplotlib lazily — avoids ImportError in headless environments
+        for users who have not called plot() explicitly.
+
+        Each invariant gets its own subplot. If ``show_threshold=True``, a red
+        dashed vertical line is drawn at the tolerance threshold. Deterministic:
+        same data produces the same plot (NFR-13).
+
+        Args:
+            title: Overall figure title. Defaults to empty string (no title).
+            show_threshold: If True, draw a labeled vertical threshold line on
+                each subplot. Defaults to True.
+
+        Raises:
+            ImportError: If matplotlib is not installed.
+
+        Example:
+            >>> report = adapter.compliance_report()
+            >>> report.plot(title="Mass Conservation Check", show_threshold=True)
+        """
+        import matplotlib.pyplot as plt  # lazy import — optional dep
+
+        n_invariants = len(self._stats)
+        if n_invariants == 0:
+            return
+
+        fig, axes = plt.subplots(1, n_invariants, figsize=(6 * n_invariants, 4))
+        if n_invariants == 1:
+            axes = [axes]  # plt.subplots returns scalar when ncols=1
+
+        if title:
+            fig.suptitle(title)
+
+        for ax, s in zip(axes, self._stats):
+            residuals = self._residuals_by_invariant.get(s["name"], [])
+            if residuals:
+                ax.hist(residuals, bins=20, label="Residuals")
+            else:
+                ax.text(
+                    0.5, 0.5, "No residual data",
+                    ha="center", va="center",
+                    transform=ax.transAxes,
+                )
+
+            if show_threshold:
+                ax.axvline(
+                    x=s["threshold"],
+                    color="red",
+                    linestyle="--",
+                    label=f"threshold={s['threshold']:.4f}",
+                )
+
+            status = "PASS" if s["violation_count"] == 0 else "FAIL"
+            ax.set_title(f"{s['name']}: {status}")
+            ax.set_xlabel("Residual")
+            ax.set_ylabel("Count")
+            ax.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    def export(self, path: str) -> None:
+        """Write a JSON compliance report to disk.
+
+        Produces a list of per-invariant dicts containing summary statistics and
+        full violation details. The output is parseable by ``json.load()`` with
+        no custom decoder needed (all values are JSON-native types).
+
+        Args:
+            path: File path for the output JSON file. Parent directory must exist.
+
+        Raises:
+            OSError: If the file cannot be written (permission error, missing
+                parent directory, disk full, etc.).
+
+        Example:
+            >>> report = adapter.compliance_report()
+            >>> report.export("./compliance_report.json")
+            >>> import json
+            >>> with open("./compliance_report.json") as f:
+            ...     data = json.load(f)
+            >>> data[0]["status"]  # "PASS" or "FAIL"
+            'PASS'
+        """
+        import json
+
+        output = []
+        for s in self._stats:
+            status = "PASS" if s["violation_count"] == 0 else "FAIL"
+            violations = [
+                v for v in self._violation_list
+                if v["invariant_name"] == s["name"]
+            ]
+            output.append({
+                "invariant_name": s["name"],
+                "status": status,
+                "max_residual": s["max_residual"],
+                "threshold": s["threshold"],
+                "violation_count": s["violation_count"],
+                "total": s["total"],
+                "violations": violations,
+            })
+
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(output, f, indent=2)

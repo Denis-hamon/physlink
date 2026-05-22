@@ -486,7 +486,14 @@ class DreamerV3Adapter(BaseAdapter):
                         ),
                     })
 
-        return ComplianceReport(_stats=stats, _violation_list=violation_list)
+        return ComplianceReport(
+            _stats=stats,
+            _violation_list=violation_list,
+            _residuals_by_invariant={
+                inv.name: list(self._invariant_residuals.get(inv.name, []))
+                for inv in self._invariants
+            },
+        )
 
     def load_checkpoint(self, path: str) -> None:
         """Load model weights from a safetensors checkpoint.
