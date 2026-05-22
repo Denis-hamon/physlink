@@ -489,7 +489,7 @@ Règles :
 - `tests/conftest.py` unique — jamais de conftest.py dans les sous-dossiers
 - Fixtures synthétiques numpy-only pour CPU CI (zéro dépendance GPU)
 - `@pytest.mark.gpu` pour tout test nécessitant CUDA — exclues du job `test-cpu`
-- Tests AST (boundary + no-torch-import) dans `tests/unit/core/test_invariants.py`
+- Tests AST (boundary + no-torch-import) dans `tests/integration/test_core_no_torch_import.py` et `tests/integration/test_core_boundary.py`
 
 ### Enforcement Guidelines
 

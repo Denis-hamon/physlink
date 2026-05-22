@@ -25,11 +25,26 @@ def test_epic2_api_symbols() -> None:
 
     expected = {"doctor", "ObservationSpace", "ActionSpace", "PhysLinkError"}
     actual = set(physlink.__all__)
-    assert expected == actual, (
-        f"Epic 2 API surface mismatch.\n"
-        f"  Got:      {sorted(actual)}\n"
-        f"  Expected: {sorted(expected)}\n"
-        f"  Fix:      update physlink.__all__ in src/physlink/__init__.py"
+    assert expected.issubset(actual), (
+        f"Epic 2 API surface regression.\n"
+        f"  Missing: {expected - actual}\n"
+        f"  Got:     {sorted(actual)}\n"
+        f"  Fix:     restore missing symbols to physlink.__all__"
+    )
+
+
+def test_epic3_api_symbols() -> None:
+    """Story 3.1: DreamerV3Adapter added to public API."""
+    import physlink
+    from physlink import DreamerV3Adapter  # noqa: F401 — import test
+
+    expected = {"doctor", "ObservationSpace", "ActionSpace", "PhysLinkError", "DreamerV3Adapter"}
+    actual = set(physlink.__all__)
+    assert expected.issubset(actual), (
+        f"Epic 3 API surface mismatch.\n"
+        f"  Missing: {expected - actual}\n"
+        f"  Got:     {sorted(actual)}\n"
+        f"  Fix:     add missing symbols to physlink.__all__ in src/physlink/__init__.py"
     )
 
 
@@ -38,7 +53,6 @@ def test_epic2_api_symbols() -> None:
 #   1. Calls the deprecated code path
 #   2. Asserts warnings.warn(..., DeprecationWarning) fires via pytest.warns(DeprecationWarning)
 #   3. References the CHANGELOG entry that documents the removal timeline
-# Epic 3 (Story 3.1) will add test_epic3_api_symbols() with DreamerV3Adapter.
 # Epic 4 (Story 4.5) will update to assert the full 7-symbol set.
 
 
@@ -93,6 +107,22 @@ class TestTopLevelNamespaceAccess:
         from physlink.core.spaces import ActionSpace as CoreActionSpace
 
         assert ActionSpace is CoreActionSpace
+
+    def test_dreamer_v3_adapter_accessible_via_physlink(self) -> None:
+        import physlink
+
+        assert hasattr(physlink, "DreamerV3Adapter")
+
+    def test_dreamer_v3_adapter_is_callable(self) -> None:
+        import physlink
+
+        assert callable(physlink.DreamerV3Adapter)
+
+    def test_dreamer_v3_adapter_same_object_as_adapters_module(self) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.adapters.dreamer import DreamerV3Adapter as AdaptersDreamer
+
+        assert DreamerV3Adapter is AdaptersDreamer
 
 
 class TestPackageMetadata:

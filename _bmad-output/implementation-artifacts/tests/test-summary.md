@@ -1,3 +1,75 @@
+# Test Automation Summary — Story 3.1: DreamerV3Adapter Construction
+
+**Date:** 2026-05-22
+**Framework:** pytest 9.0.3 / Python 3.12.1
+**Story file:** `_bmad-output/implementation-artifacts/3-1-dreamerv3adapter-construction.md`
+
+---
+
+## Generated / Updated Tests
+
+### Unit Tests
+
+- [x] `tests/unit/adapters/test_dreamer_cpu.py` — 32 tests CPU-only, Story 3.1 ACs (21 existants + 11 gaps comblés)
+
+### Integration Tests
+
+- [x] `tests/integration/test_api_stability.py` — 19 tests (inchangé — `test_epic3_api_symbols` + 3 méthodes `TestTopLevelNamespaceAccess` déjà en place)
+
+---
+
+## Lacunes comblées (11 nouveaux tests ajoutés, 21 → 32)
+
+### `TestDreamerV3AdapterConstruction`
+- [x] `test_configuration_error_raised_for_act_dims_below_1` — **corrigé** : ne testait que `MIN_ACT_DIMS == 1`, désormais vérifie réellement le `raise ConfigurationError` via `SimpleNamespace`
+- [x] `test_construction_succeeds_at_exact_obs_dims_boundary` — borne inférieure exacte `obs_space.dims == 4` doit réussir
+
+### `TestDreamerV3AdapterExplain`
+- [x] `test_explain_obs_space_value_is_dict` — vérifie que la valeur de `obs_space` est un `dict`
+- [x] `test_explain_act_space_value_is_dict` — vérifie que la valeur de `act_space` est un `dict`
+
+### `TestDreamerV3AdapterStubs`
+- [x] `test_fit_error_message_references_story_32` — le message `NotImplementedError` de `fit()` référence "3.2"
+- [x] `test_visualize_error_message_references_story_35` — le message référence "3.5"
+- [x] `test_export_error_message_references_story_36` — le message référence "3.6"
+
+### `TestDreamerV3AdapterRepr` *(nouveau)*
+- [x] `test_repr_returns_string` — `repr()` retourne une `str`
+- [x] `test_repr_contains_obs_dims` — contient `obs_dims=N`
+- [x] `test_repr_contains_act_dims` — contient `act_dims=N`
+- [x] `test_repr_contains_class_name` — contient `DreamerV3Adapter`
+
+### `TestDreamerV3AdapterImportNoBytorchDependency`
+- [x] `test_torch_not_in_sys_modules_after_dreamer_import` — vérifie `"torch" not in sys.modules` après import (skip si torch déjà chargé)
+
+---
+
+## Coverage Story 3.1 (AC mapping)
+
+| Acceptance Criteria | Tests couvrant |
+|---|---|
+| AC #1 — Construction valide, pas de chargement modèle | `TestDreamerV3AdapterConstruction` (10), `TestDreamerV3AdapterIdempotence` (2) |
+| AC #2 — `ConfigurationError` pour `obs_space.dims < 4` | `test_configuration_error_raised_for_obs_dims_below_4`, `test_configuration_error_raised_for_obs_dims_exactly_3`, `test_configuration_error_message_*_for_obs` (3) |
+| AC #2 — `ConfigurationError` pour `act_space.dims < 1` | `test_configuration_error_raised_for_act_dims_below_1`, `test_configuration_error_message_*_for_act` (2) |
+| AC #3 — `DreamerV3Adapter` dans `physlink.__all__` (5 symboles) | `test_epic3_api_symbols`, `TestTopLevelNamespaceAccess` (3) |
+| NFR-09 idempotence | `TestDreamerV3AdapterIdempotence` (2) |
+| No torch module-level | `TestDreamerV3AdapterImportNoBytorchDependency` (2) |
+
+**Total : 32 tests — 32 passed, 0 failed**
+**`test_torch_not_in_sys_modules_after_dreamer_import` : SKIPPED quand torch déjà en session — comportement attendu**
+
+---
+
+## État de la suite complète
+
+| Scope | Résultat |
+|---|---|
+| `tests/unit/adapters/test_dreamer_cpu.py` | ✅ 32 passed |
+| `tests/integration/test_api_stability.py` | ✅ 19 passed |
+| Suite complète | ✅ 432 passed, 3 skipped (baseline Epic 2 : 422 passed, 2 skipped — 0 régression) |
+
+---
+
 # Test Automation Summary — Story 2.2: ObservationSpace Construction and Validation
 
 **Date:** 2026-05-22
