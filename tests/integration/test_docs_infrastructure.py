@@ -8,6 +8,7 @@ or making network requests.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 try:
@@ -93,9 +94,15 @@ class TestMkdocsYmlRequiredFields:
     def test_site_url_uses_your_org_placeholder(self) -> None:
         config = _load_yaml(MKDOCS_YML)
         site_url = config.get("site_url", "")
-        assert "YOUR-ORG" in site_url, (
-            f"mkdocs.yml site_url must use 'YOUR-ORG' placeholder, got: {site_url!r}\n"
-            "Consistent with all other YOUR-ORG references in README."
+        assert "YOUR-ORG" not in site_url, (
+            f"mkdocs.yml site_url still contains the 'YOUR-ORG' template placeholder, got: {site_url!r}\n"
+            "Fix: replace YOUR-ORG with the actual GitHub owner deploying this fork."
+        )
+        assert re.match(
+            r"^https://[A-Za-z0-9](?:[A-Za-z0-9-]{0,38}[A-Za-z0-9])?\.github\.io/physlink/?$",
+            site_url,
+        ), (
+            f"mkdocs.yml site_url must be 'https://<owner>.github.io/physlink/', got: {site_url!r}"
         )
 
     def test_mike_version_provider_configured(self) -> None:
@@ -579,9 +586,16 @@ class TestReadmeDocsBadge:
 
     def test_docs_badge_uses_your_org_placeholder(self) -> None:
         readme = self._readme()
-        assert "YOUR-ORG.github.io/physlink/" in readme, (
-            "README.md docs badge URL must use 'YOUR-ORG' placeholder — "
-            "consistent with all other YOUR-ORG references (Story 2.5 Dev Notes)."
+        assert "YOUR-ORG.github.io/physlink/" not in readme, (
+            "README.md docs badge URL still uses the 'YOUR-ORG' template placeholder. "
+            "Fix: replace YOUR-ORG with the actual GitHub owner deploying this fork."
+        )
+        assert re.search(
+            r"https://[A-Za-z0-9](?:[A-Za-z0-9-]{0,38}[A-Za-z0-9])?\.github\.io/physlink/",
+            readme,
+        ), (
+            "README.md docs badge must link to '<owner>.github.io/physlink/' "
+            "(real GitHub Pages URL — Story 2.5 Dev Notes)."
         )
 
     def test_docs_badge_positioned_between_ci_and_arxiv(self) -> None:
