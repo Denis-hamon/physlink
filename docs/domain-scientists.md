@@ -1,46 +1,37 @@
-# Domain Scientists Guide
+# For Domain Scientists
 
-This guide follows **Samuel's DD-003 path**: a CFD/robotics scientist who needs ML models that respect physical laws.
+This page is for you if you need ML models that respect physics — not just models that *look* plausible in simulation, but models that provably conserve mass, energy, momentum, and the constraints your domain imposes.
 
-## The Problem: Physical Hallucinations
+## Philosophy: Physical Hallucinations
 
-Standard ML models trained on simulation data frequently produce **physical hallucinations** — predictions that are statistically plausible but physically impossible:
+Standard ML models trained on simulation data frequently produce **physical hallucinations** — predictions that are statistically plausible but physically impossible. A model minimising MSE on trajectory data has no reason to conserve mass, honour contact normals, or respect inertia. Its loss function is physics-blind.
 
-- Joint angles exceeding mechanical limits
-- Instantaneous velocity discontinuities (violating inertia)
-- Energy non-conservation across trajectories
-- Constraint violations (contact normals, friction cones)
+The result: joint angles that exceed mechanical stops, velocities that instantaneously teleport, fluid flows that create mass from nothing. These errors are invisible during training but catastrophic on real hardware. The model learns the *shape* of physical trajectories without learning the *laws* that govern them.
 
-These hallucinations are invisible to standard loss functions but catastrophic in real hardware deployment.
+PhysLink addresses this by separating representation from validation. You register your domain's physical constraints as plain Python callables; PhysLink enforces them during adaptation and surfaces violations in a structured compliance report.
 
-## PhysLink's Approach
+## Registering a Physical Invariant
 
-PhysLink separates the *representation* of physical spaces from the *validation* of physical constraints. You configure your spaces once, attach invariants to them, and receive structured compliance reports.
+Register your domain constraint as a plain Python callable. The function receives a trajectory dictionary and returns a **residual** — a float where `0.0` means perfect compliance.
 
-## Registering Physical Invariants (preview — Epic 4)
-
-> **Note:** `register_invariant` and `ComplianceReport` are available after **Epic 4**.
+### mass_conservation Example
 
 ```python
-from physlink.core.spaces import ObservationSpace, ActionSpace
-from physlink.compliance import register_invariant  # available after Epic 4
+from physlink import DreamerV3Adapter, register_invariant
 
-obs_space = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
+# Assume adapter is already constructed (see getting-started.md)
+def mass_conservation(trajectory: dict) -> float:
+    """Returns residual: absolute difference between mass_in and mass_out."""
+    return abs(trajectory["mass_flow_in"] - trajectory["mass_flow_out"])
 
-# Register a physical constraint: joint velocity must satisfy |dq/dt| ≤ v_max
 register_invariant(
-    space=obs_space,
-    name="joint_velocity_bound",
-    fn=lambda obs: (obs["velocity"].abs() <= 10.0).all(),
-    severity="critical",
+    adapter,
+    name="mass_conservation",
+    fn=mass_conservation,
+    tolerance=0.01,
+    mode="hard",
 )
-```
 
-## ComplianceReport Output (preview — Epic 4)
-
-After running your adaptation loop, generate a compliance report:
-
-```python
 report = adapter.compliance_report()
 print(report.summary())
 ```
@@ -48,22 +39,21 @@ print(report.summary())
 Expected output:
 
 ```
-ComplianceReport — 1000 trajectories
-  ✅  joint_position_bound   : 1000/1000 passed
-  ⚠️  joint_velocity_bound   : 987/1000 passed  (13 violations)
-  ❌  energy_conservation    : 421/1000 passed  (579 violations — CRITICAL)
-
-Overall compliance: 80.3% — NOT SAFE FOR HARDWARE DEPLOYMENT
+mass_conservation: PASS (max_residual=0.007, threshold=0.01, violations=0/1000)
 ```
 
-## Current Capabilities (v0.1)
+> **Any physical domain works with the same pattern.**
+> CFD: energy conservation — robotics: momentum conservation — climate: mass conservation.
+> Write your invariant as `fn(trajectory: dict) -> float`, plug it in, and PhysLink enforces it.
 
-- `ObservationSpace.from_proprioception()` — define joint state spaces
-- `ActionSpace.continuous()` — define bounded continuous action spaces
-- `.explain()` — human-readable space introspection
+## What's Next?
 
-See the [API Reference](api/index.md) for full documentation.
+Run the worked example end-to-end in Google Colab — no local install required:
 
-## Evaluation Path
+**[Open Domain Scientist Colab →](https://colab.research.google.com/github/YOUR-ORG/physlink/blob/main/notebooks/domain-scientist-colab.ipynb)**
+
+The notebook walks through the full Samuel path: configure spaces, attach `mass_conservation`, run adaptation, and inspect the ComplianceReport in an interactive environment.
+
+---
 
 If you're evaluating PhysLink for your lab's infrastructure, see the [Lab Adoption Guide](lab-adoption-guide.md) for a structured 1-day evaluation checklist.
