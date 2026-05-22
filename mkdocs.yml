@@ -17,9 +17,9 @@ theme:
     - content.code.copy
     - navigation.top
   palette:
-    scheme: slate
+    scheme: default
     primary: black
-    accent: white
+    accent: black
 
 extra_css:
   - stylesheets/vercel.css
