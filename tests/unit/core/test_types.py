@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from physlink.core._types import AdaptationConfig, AdaptationRun, TrajectoryBatch
+from physlink.core._types import AdaptationConfig, AdaptationRun, TrajectoryBatch, TrajectoryBuffer
 from physlink.core.spaces import ActionSpace, ObservationSpace
 
 
@@ -331,3 +331,165 @@ class TestAdaptationRunDefaults:
         time.sleep(0.001)
         run_b = AdaptationRun(config=_make_config())
         assert run_a.started_at <= run_b.started_at
+
+
+# ---------------------------------------------------------------------------
+# TrajectoryBuffer — Story 4.2
+# ---------------------------------------------------------------------------
+
+_SAMPLE_TRAJECTORIES: list[dict[str, object]] = [
+    {"obs": [1.0, 2.0, 3.0], "action": [0.1, 0.2]},
+    {"obs": [4.0, 5.0, 6.0], "action": [0.3, 0.4]},
+    {"obs": [7.0, 8.0, 9.0], "action": [0.5, 0.6]},
+]
+
+
+class TestTrajectoryBufferConstruction:
+    def test_empty_buffer_has_zero_length(self) -> None:
+        buf = TrajectoryBuffer()
+        assert len(buf) == 0
+
+    def test_buffer_with_data_reports_length(self) -> None:
+        buf = TrajectoryBuffer(data=[{}, {}])
+        assert len(buf) == 2
+
+    def test_repr_shows_n(self) -> None:
+        buf = TrajectoryBuffer(data=[{}, {}])
+        assert repr(buf) == "TrajectoryBuffer(n=2)"
+
+    def test_repr_empty(self) -> None:
+        assert repr(TrajectoryBuffer()) == "TrajectoryBuffer(n=0)"
+
+    def test_iter_yields_dicts(self) -> None:
+        data = [{"a": 1}, {"b": 2}]
+        buf = TrajectoryBuffer(data=data)
+        assert list(buf) == data
+
+    def test_isinstance(self) -> None:
+        assert isinstance(TrajectoryBuffer(), TrajectoryBuffer)
+
+    def test_to_batch_returns_trajectory_batch(self) -> None:
+        buf = TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES)
+        batch = buf.to_batch()
+        assert isinstance(batch, TrajectoryBatch)
+
+    def test_to_batch_preserves_data_length(self) -> None:
+        buf = TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES)
+        assert len(buf.to_batch()) == len(_SAMPLE_TRAJECTORIES)
+
+    def test_to_batch_data_equal(self) -> None:
+        buf = TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES)
+        assert buf.to_batch().data == _SAMPLE_TRAJECTORIES
+
+    def test_to_batch_on_empty_buffer_returns_empty_batch(self) -> None:
+        batch = TrajectoryBuffer().to_batch()
+        assert isinstance(batch, TrajectoryBatch)
+        assert len(batch) == 0
+
+
+class TestTrajectoryBufferExport:
+    def test_export_creates_file(self, tmp_path: pytest.TempdirFactory) -> None:
+        path = str(tmp_path / "t.pkl")
+        buf = TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES)
+        buf.export(path)
+        import os
+        assert os.path.exists(path)
+
+    def test_export_does_not_modify_data(self, tmp_path: pytest.TempdirFactory) -> None:
+        path = str(tmp_path / "t.pkl")
+        buf = TrajectoryBuffer(data=list(_SAMPLE_TRAJECTORIES))
+        original_data = list(buf.data)
+        buf.export(path)
+        assert buf.data == original_data
+
+    def test_export_file_is_non_empty(self, tmp_path: pytest.TempdirFactory) -> None:
+        path = str(tmp_path / "t.pkl")
+        buf = TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES)
+        buf.export(path)
+        import os
+        assert os.path.getsize(path) > 0
+
+    def test_export_empty_buffer(self, tmp_path: pytest.TempdirFactory) -> None:
+        path = str(tmp_path / "empty.pkl")
+        TrajectoryBuffer().export(path)
+        import os
+        assert os.path.exists(path)
+
+
+class TestTrajectoryBufferLoad:
+    def test_load_returns_trajectory_buffer(self, tmp_path: pytest.TempdirFactory) -> None:
+        path = str(tmp_path / "t.pkl")
+        TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES).export(path)
+        loaded = TrajectoryBuffer.load(path)
+        assert isinstance(loaded, TrajectoryBuffer)
+
+    def test_round_trip_fidelity_single_trajectory(self, tmp_path: pytest.TempdirFactory) -> None:
+        data = [{"obs": [1.0, 2.0], "action": [0.5]}]
+        path = str(tmp_path / "single.pkl")
+        TrajectoryBuffer(data=data).export(path)
+        loaded = TrajectoryBuffer.load(path)
+        assert loaded.data == data
+
+    def test_round_trip_fidelity_multiple_trajectories(
+        self, tmp_path: pytest.TempdirFactory
+    ) -> None:
+        path = str(tmp_path / "multi.pkl")
+        TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES).export(path)
+        loaded = TrajectoryBuffer.load(path)
+        assert loaded.data == _SAMPLE_TRAJECTORIES
+
+    def test_round_trip_fidelity_nested_data(self, tmp_path: pytest.TempdirFactory) -> None:
+        import numpy as np
+        data = [{"obs": np.array([1.0, 2.0, 3.0]), "action": np.array([0.1])}]
+        path = str(tmp_path / "numpy.pkl")
+        TrajectoryBuffer(data=data).export(path)
+        loaded = TrajectoryBuffer.load(path)
+        assert len(loaded.data) == 1
+        np.testing.assert_array_equal(loaded.data[0]["obs"], data[0]["obs"])
+
+    def test_load_result_length(self, tmp_path: pytest.TempdirFactory) -> None:
+        path = str(tmp_path / "t.pkl")
+        TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES).export(path)
+        loaded = TrajectoryBuffer.load(path)
+        assert len(loaded) == len(_SAMPLE_TRAJECTORIES)
+
+    def test_load_result_usable_in_to_batch(self, tmp_path: pytest.TempdirFactory) -> None:
+        path = str(tmp_path / "t.pkl")
+        TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES).export(path)
+        loaded = TrajectoryBuffer.load(path)
+        batch = loaded.to_batch()
+        assert isinstance(batch, TrajectoryBatch)
+        assert len(batch) == len(_SAMPLE_TRAJECTORIES)
+
+    def test_load_nonexistent_raises_file_not_found(
+        self, tmp_path: pytest.TempdirFactory
+    ) -> None:
+        with pytest.raises(FileNotFoundError):
+            TrajectoryBuffer.load(str(tmp_path / "nonexistent.pkl"))
+
+    def test_round_trip_fidelity_empty_buffer(self, tmp_path: pytest.TempdirFactory) -> None:
+        path = str(tmp_path / "empty.pkl")
+        TrajectoryBuffer().export(path)
+        loaded = TrajectoryBuffer.load(path)
+        assert isinstance(loaded, TrajectoryBuffer)
+        assert len(loaded) == 0
+        assert loaded.data == []
+
+
+class TestTrajectoryBufferIdempotence:
+    def test_re_export_same_path_overwrites_cleanly(
+        self, tmp_path: pytest.TempdirFactory
+    ) -> None:
+        path = str(tmp_path / "t.pkl")
+        buf = TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES)
+        buf.export(path)
+        buf.export(path)  # re-run same export — must not fail or corrupt
+        loaded = TrajectoryBuffer.load(path)
+        assert loaded.data == _SAMPLE_TRAJECTORIES
+
+    def test_re_load_produces_equal_buffer(self, tmp_path: pytest.TempdirFactory) -> None:
+        path = str(tmp_path / "t.pkl")
+        TrajectoryBuffer(data=_SAMPLE_TRAJECTORIES).export(path)
+        loaded_a = TrajectoryBuffer.load(path)
+        loaded_b = TrajectoryBuffer.load(path)
+        assert loaded_a.data == loaded_b.data

@@ -4,7 +4,7 @@ import contextlib
 from collections.abc import Generator
 from typing import TYPE_CHECKING, Any
 
-from physlink.core._types import TrajectoryBatch
+from physlink.core._types import TrajectoryBatch, TrajectoryBuffer
 
 if TYPE_CHECKING:
     from physlink.core._types import AdaptationRun
@@ -546,7 +546,7 @@ class DreamerV3Adapter(BaseAdapter):
 
     def fit(
         self,
-        trajectories: list[dict[str, Any]] | TrajectoryBatch,
+        trajectories: list[dict[str, Any]] | TrajectoryBatch | TrajectoryBuffer,
         steps: int,
         checkpoint_interval_steps: int = 1000,
         debug_hooks: bool = False,
@@ -562,9 +562,9 @@ class DreamerV3Adapter(BaseAdapter):
         and training history for a fresh run (NFR-09 idempotence).
 
         Args:
-            trajectories: Trajectory dataset. list[dict] is silently converted
-                to TrajectoryBatch. Each dict must contain at minimum "obs" and
-                "action" keys with numpy-compatible values.
+            trajectories: Trajectory dataset. ``list[dict]`` and ``TrajectoryBuffer``
+                are silently converted to ``TrajectoryBatch``. Each dict must contain
+                at minimum "obs" and "action" keys with numpy-compatible values.
             steps: Total gradient steps to run. Must be > 0.
             checkpoint_interval_steps: Interval (in steps) between checkpoint
                 saves. A checkpoint file is written every this many steps. Must
@@ -614,6 +614,8 @@ class DreamerV3Adapter(BaseAdapter):
                 f"  Fix:      provide a positive integer, e.g. checkpoint_interval_steps=1000."
             )
 
+        if isinstance(trajectories, TrajectoryBuffer):
+            trajectories = trajectories.to_batch()
         if isinstance(trajectories, list):
             trajectories = TrajectoryBatch.from_list(trajectories)
 
@@ -749,7 +751,7 @@ class DreamerV3Adapter(BaseAdapter):
 
     def visualize(
         self,
-        trajectories: list[dict[str, Any]] | TrajectoryBatch,
+        trajectories: list[dict[str, Any]] | TrajectoryBatch | TrajectoryBuffer,
         output_path: str = "physlink_triptych.gif",
     ) -> str:
         """Produce a triptych GIF comparing Imagination, Real, and Difference panels.
@@ -763,8 +765,9 @@ class DreamerV3Adapter(BaseAdapter):
 
         Args:
             trajectories: Trajectory dataset to visualize. Uses the first trajectory
-                for the panel rendering. list[dict] is silently converted to
-                TrajectoryBatch. Each dict must contain at minimum an "obs" key.
+                for the panel rendering. ``list[dict]`` and ``TrajectoryBuffer`` are
+                silently converted to ``TrajectoryBatch``. Each dict must contain at
+                minimum an "obs" key.
             output_path: File path for the output GIF. Defaults to
                 "physlink_triptych.gif" in the current working directory.
 
@@ -791,6 +794,8 @@ class DreamerV3Adapter(BaseAdapter):
                 "  Fix:      call adapter.fit(trajectories, steps=N) before visualize()."
             )
 
+        if isinstance(trajectories, TrajectoryBuffer):
+            trajectories = trajectories.to_batch()
         if isinstance(trajectories, list):
             trajectories = TrajectoryBatch.from_list(trajectories)
 

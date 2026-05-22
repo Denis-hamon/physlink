@@ -1,2 +1,6 @@
 .claude/.story-automator-active
 site/
+__pycache__/
+*.pyc
+*.pyo
+physlink_checkpoints/

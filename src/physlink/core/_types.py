@@ -58,6 +58,95 @@ class TrajectoryBatch:
         return f"TrajectoryBatch(n={len(self.data)})"
 
 
+@dataclass
+class TrajectoryBuffer:
+    """Mutable buffer for collecting and persisting trajectory data across sessions.
+
+    Wraps a list of trajectory dicts and provides ``export``/``load`` methods for
+    cross-session persistence. Use ``to_batch()`` to convert to a ``TrajectoryBatch``
+    for direct use with ``adapter.fit()``.
+
+    Args:
+        data: List of trajectory dicts, each with at minimum "obs" and "action" keys.
+
+    Example:
+        >>> buf = TrajectoryBuffer(data=[{"obs": [1, 2], "action": [0]}])
+        >>> buf.export("/tmp/buf.pkl")
+        >>> loaded = TrajectoryBuffer.load("/tmp/buf.pkl")
+        >>> len(loaded)
+        1
+    """
+
+    data: list[dict[str, Any]] = field(default_factory=list)
+
+    def export(self, path: str) -> None:
+        """Persist buffer to disk at the given path.
+
+        Serialises ``self.data`` using pickle without modifying the in-memory state.
+
+        Args:
+            path: File path where the buffer will be written (.pkl extension recommended).
+
+        Raises:
+            OSError: If the file cannot be created or written (e.g. invalid path, no permissions).
+
+        Example:
+            >>> buf = TrajectoryBuffer(data=[{"obs": [1, 2], "action": [0]}])
+            >>> buf.export("/tmp/trajectories.pkl")
+        """
+        import pickle
+
+        with open(path, "wb") as f:
+            pickle.dump(self.data, f)
+
+    @classmethod
+    def load(cls, path: str) -> TrajectoryBuffer:
+        """Load a previously exported ``TrajectoryBuffer`` from disk.
+
+        Args:
+            path: File path to read the buffer from.
+
+        Returns:
+            A ``TrajectoryBuffer`` containing the same trajectories as the original.
+
+        Raises:
+            FileNotFoundError: If ``path`` does not exist.
+
+        Example:
+            >>> loaded = TrajectoryBuffer.load("/tmp/trajectories.pkl")
+            >>> isinstance(loaded, TrajectoryBuffer)
+            True
+        """
+        import pickle
+
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+        return cls(data=data)
+
+    def to_batch(self) -> TrajectoryBatch:
+        """Convert buffer to a ``TrajectoryBatch`` for use with ``adapter.fit()``.
+
+        Returns:
+            A ``TrajectoryBatch`` wrapping the buffer's data.
+
+        Example:
+            >>> buf = TrajectoryBuffer(data=[{"obs": [1], "action": [0]}])
+            >>> batch = buf.to_batch()
+            >>> isinstance(batch, TrajectoryBatch)
+            True
+        """
+        return TrajectoryBatch.from_list(self.data)
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __iter__(self) -> Iterator[dict[str, Any]]:
+        return iter(self.data)
+
+    def __repr__(self) -> str:
+        return f"TrajectoryBuffer(n={len(self.data)})"
+
+
 @dataclass(frozen=True)
 class AdaptationConfig:
     """Immutable configuration for a named adaptation experiment.

@@ -1360,3 +1360,78 @@ class TestFitReturnTypeStory41:
         source = inspect.getsource(dreamer_module)
         assert "TYPE_CHECKING" in source
         assert "AdaptationRun" in source
+
+
+# ---------------------------------------------------------------------------
+# Story 4.2 — TrajectoryBuffer accepted by fit()
+# ---------------------------------------------------------------------------
+
+class TestFitWithTrajectoryBufferStory42:
+    """Verify fit() and related methods accept TrajectoryBuffer (Story 4.2)."""
+
+    @pytest.fixture()
+    def adapter(self) -> "DreamerV3Adapter":
+        from physlink import DreamerV3Adapter
+        obs = ObservationSpace.from_proprioception(joints=7)
+        act = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        return DreamerV3Adapter(obs, act)
+
+    @pytest.fixture()
+    def sample_buffer(self) -> "TrajectoryBuffer":
+        from physlink.core._types import TrajectoryBuffer
+        data = [{"obs": [float(i)] * 7, "action": [0.0] * 7} for i in range(10)]
+        return TrajectoryBuffer(data=data)
+
+    def test_fit_accepts_trajectory_buffer(
+        self, adapter: "DreamerV3Adapter", sample_buffer: "TrajectoryBuffer"
+    ) -> None:
+        pytest.importorskip("torch")
+        adapter.fit(sample_buffer, steps=2, checkpoint_interval_steps=1)
+
+    def test_fit_trajectory_buffer_produces_adaptation_run(
+        self, adapter: "DreamerV3Adapter", sample_buffer: "TrajectoryBuffer"
+    ) -> None:
+        pytest.importorskip("torch")
+        from physlink.core._types import AdaptationRun
+        run = adapter.fit(sample_buffer, steps=2, checkpoint_interval_steps=1)
+        assert isinstance(run, AdaptationRun)
+
+    def test_fit_buffer_export_load_round_trip(
+        self,
+        adapter: "DreamerV3Adapter",
+        sample_buffer: "TrajectoryBuffer",
+        tmp_path: Path,
+    ) -> None:
+        pytest.importorskip("torch")
+        from physlink.core._types import AdaptationRun, TrajectoryBuffer
+        path = str(tmp_path / "buf.pkl")
+        sample_buffer.export(path)
+        loaded = TrajectoryBuffer.load(path)
+        run = adapter.fit(loaded, steps=2, checkpoint_interval_steps=1)
+        assert isinstance(run, AdaptationRun)
+
+    def test_trajectory_buffer_import_at_module_level(self) -> None:
+        import inspect
+        from physlink.adapters import dreamer as dreamer_module
+        source = inspect.getsource(dreamer_module)
+        assert "TrajectoryBuffer" in source
+
+    def test_fit_trajectory_buffer_raises_validation_error_for_invalid_steps(
+        self, adapter: "DreamerV3Adapter", sample_buffer: "TrajectoryBuffer"
+    ) -> None:
+        from physlink.core.exceptions import ValidationError
+        with pytest.raises(ValidationError):
+            adapter.fit(sample_buffer, steps=0)
+
+    def test_visualize_raises_adapter_error_with_trajectory_buffer_input(
+        self, adapter: "DreamerV3Adapter", sample_buffer: "TrajectoryBuffer"
+    ) -> None:
+        from physlink.core.exceptions import AdapterError
+        with pytest.raises(AdapterError):
+            adapter.visualize(sample_buffer)
+
+    def test_visualize_source_has_trajectory_buffer_isinstance_check(self) -> None:
+        import inspect
+        from physlink.adapters.dreamer import DreamerV3Adapter
+        source = inspect.getsource(DreamerV3Adapter.visualize)
+        assert "isinstance(trajectories, TrajectoryBuffer)" in source
