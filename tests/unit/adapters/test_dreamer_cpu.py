@@ -1,7 +1,7 @@
-"""Unit tests for DreamerV3Adapter construction — CPU only (no GPU required).
+"""Unit tests for DreamerV3Adapter — CPU only (no GPU required).
 
-All tests in this module are CPU-safe at construction stage. GPU tests will be
-introduced in Story 3.2 when fit() is implemented.
+Construction, validation, and pure-Python helper tests. GPU tests for fit()
+are in test_dreamer_gpu.py.
 """
 
 from __future__ import annotations
@@ -239,26 +239,7 @@ class TestDreamerV3AdapterExplain:
 
 
 class TestDreamerV3AdapterStubs:
-    """fit(), visualize(), export() must raise NotImplementedError (stubs)."""
-
-    def test_fit_raises_not_implemented_error(self) -> None:
-        from physlink import DreamerV3Adapter
-
-        obs = _make_valid_obs(joints=7)
-        act = _make_valid_act(dims=7)
-        adapter = DreamerV3Adapter(obs, act)
-        with pytest.raises(NotImplementedError):
-            adapter.fit([], steps=10)
-
-    def test_fit_error_message_references_story_32(self) -> None:
-        from physlink import DreamerV3Adapter
-
-        obs = _make_valid_obs(joints=7)
-        act = _make_valid_act(dims=7)
-        adapter = DreamerV3Adapter(obs, act)
-        with pytest.raises(NotImplementedError) as exc_info:
-            adapter.fit([], steps=10)
-        assert "3.2" in str(exc_info.value)
+    """visualize(), export() must raise NotImplementedError (stubs)."""
 
     def test_visualize_raises_not_implemented_error(self) -> None:
         from physlink import DreamerV3Adapter
@@ -364,3 +345,252 @@ class TestDreamerV3AdapterImportNoBytorchDependency:
             "physlink.adapters.dreamer imported torch at module level — "
             "torch import must be deferred to fit() in Story 3.2"
         )
+
+
+class TestFitValidation:
+    """Validation errors fired before import torch — CPU-safe (AC: #1, #2)."""
+
+    def test_fit_raises_validation_error_for_steps_zero(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError) as exc_info:
+            adapter.fit(synthetic_trajectories, steps=0)
+        assert "Got:" in str(exc_info.value)
+
+    def test_fit_raises_validation_error_for_negative_steps(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError) as exc_info:
+            adapter.fit(synthetic_trajectories, steps=-1)
+        assert "Got:" in str(exc_info.value)
+
+    def test_fit_raises_validation_error_for_zero_checkpoint_interval(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError) as exc_info:
+            adapter.fit(synthetic_trajectories, steps=10, checkpoint_interval_steps=0)
+        assert "Got:" in str(exc_info.value)
+
+    def test_fit_raises_validation_error_for_negative_checkpoint_interval(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError) as exc_info:
+            adapter.fit(synthetic_trajectories, steps=10, checkpoint_interval_steps=-1)
+        assert "Got:" in str(exc_info.value)
+
+
+class TestFitValidationErrorMessages:
+    """Verify Got/Expected/Fix format in all ValidationError messages (AC: #1, #2)."""
+
+    def test_steps_zero_error_contains_expected(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError) as exc_info:
+            adapter.fit(synthetic_trajectories, steps=0)
+        msg = str(exc_info.value)
+        assert "Expected:" in msg
+        assert "Fix:" in msg
+
+    def test_steps_zero_error_contains_actual_value(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError) as exc_info:
+            adapter.fit(synthetic_trajectories, steps=0)
+        assert "steps=0" in str(exc_info.value)
+
+    def test_checkpoint_interval_error_contains_expected_and_fix(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError) as exc_info:
+            adapter.fit(synthetic_trajectories, steps=10, checkpoint_interval_steps=0)
+        msg = str(exc_info.value)
+        assert "Expected:" in msg
+        assert "Fix:" in msg
+
+
+class TestFitValidationBoolGuard:
+    """Bool-before-int guard — isinstance(True, int) is True in Python (Dev Notes trap)."""
+
+    def test_fit_raises_validation_error_for_bool_steps_true(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError):
+            adapter.fit(synthetic_trajectories, steps=True)  # type: ignore[arg-type]
+
+    def test_fit_raises_validation_error_for_bool_steps_false(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError):
+            adapter.fit(synthetic_trajectories, steps=False)  # type: ignore[arg-type]
+
+    def test_fit_raises_validation_error_for_bool_checkpoint_interval(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError):
+            adapter.fit(synthetic_trajectories, steps=10, checkpoint_interval_steps=True)  # type: ignore[arg-type]
+
+
+class TestComputeHealth:
+    """Unit tests for _compute_health() — pure Python, no GPU required."""
+
+    def _make_adapter(self) -> "DreamerV3Adapter":
+        from physlink import DreamerV3Adapter
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        return DreamerV3Adapter(obs, act)
+
+    def test_returns_ok_before_baseline_established(self) -> None:
+        adapter = self._make_adapter()
+        # Fewer than 10 steps — no baseline yet
+        for _ in range(9):
+            result = adapter._compute_health(1.0)
+        assert result == "OK"
+
+    def test_baseline_established_after_ten_steps(self) -> None:
+        adapter = self._make_adapter()
+        for _ in range(10):
+            adapter._compute_health(1.0)
+        assert adapter._baseline_loss is not None
+
+    def test_returns_ok_when_loss_within_threshold(self) -> None:
+        adapter = self._make_adapter()
+        # Establish baseline of 1.0
+        for _ in range(10):
+            adapter._compute_health(1.0)
+        # Loss at 1.5× baseline — under the 2× threshold
+        result = adapter._compute_health(1.5)
+        assert result == "OK"
+
+    def test_returns_anomaly_when_loss_exceeds_twice_baseline(self) -> None:
+        adapter = self._make_adapter()
+        # Establish baseline of 1.0
+        for _ in range(10):
+            adapter._compute_health(1.0)
+        # Fill the rolling window with very high loss to push rolling avg above 2×
+        for _ in range(50):
+            adapter._compute_health(10.0)
+        result = adapter._compute_health(10.0)
+        assert result == "ANOMALY"
+
+    def test_returns_ok_when_baseline_is_zero(self) -> None:
+        adapter = self._make_adapter()
+        # Force a zero baseline — should not divide by zero, returns OK
+        for _ in range(10):
+            adapter._compute_health(0.0)
+        result = adapter._compute_health(0.0)
+        assert result == "OK"
+
+    def test_rolling_window_capped_at_fifty(self) -> None:
+        adapter = self._make_adapter()
+        for _ in range(60):
+            adapter._compute_health(1.0)
+        assert len(adapter._loss_history) <= 50
+
+
+class TestResetTrainingState:
+    """Unit tests for _reset_training_state() — CPU-safe."""
+
+    def test_reset_clears_loss_history(self) -> None:
+        from physlink import DreamerV3Adapter
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        # Populate state via _compute_health
+        for i in range(15):
+            adapter._compute_health(float(i))
+        assert len(adapter._loss_history) > 0
+        adapter._reset_training_state()
+        assert adapter._loss_history == []
+
+    def test_reset_clears_baseline_loss(self) -> None:
+        from physlink import DreamerV3Adapter
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        for _ in range(15):
+            adapter._compute_health(1.0)
+        assert adapter._baseline_loss is not None
+        adapter._reset_training_state()
+        assert adapter._baseline_loss is None
+
+    def test_validation_error_does_not_corrupt_state(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        # Populate some health state
+        for _ in range(5):
+            adapter._compute_health(1.0)
+        original_history_len = len(adapter._loss_history)
+        # fit() raises before modifying state
+        with pytest.raises(ValidationError):
+            adapter.fit(synthetic_trajectories, steps=0)
+        # State must be untouched — validation fires before reset
+        assert len(adapter._loss_history) == original_history_len
