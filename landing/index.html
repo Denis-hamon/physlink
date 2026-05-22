@@ -10,858 +10,1003 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-/* ─── TOKENS ──────────────────────────────────── */
+/* ── VERCEL DESIGN TOKENS ─────────────────────── */
 :root {
-  --bg:       #040a0e;
-  --surface:  #071018;
-  --raised:   #0c1824;
-  --overlay:  #122030;
+  --bg:        #000000;
+  --surface:   #0a0a0a;
+  --elevated:  #111111;
+  --overlay:   #1a1a1a;
 
-  --green:      #00e87a;
-  --green-dim:  rgba(0,232,122,.12);
-  --green-glow: rgba(0,232,122,.35);
-  --blue:       #60a5fa;
-  --blue-dim:   rgba(96,165,250,.1);
-  --orange:     #fb923c;
-  --red:        #f87171;
+  --border:        rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.15);
+  --border-focus:  rgba(255,255,255,0.28);
 
-  --border:   rgba(96,165,250,.1);
-  --border-g: rgba(0,232,122,.2);
+  --text:   #ededed;
+  --text-2: #888888;
+  --text-3: #444444;
 
-  --text:   #dbeafe;
-  --text-2: #6b8aa4;
-  --text-3: #3a5470;
+  --r-xs:   2px;
+  --r-sm:   4px;
+  --r-md:   6px;
+  --r-lg:   8px;
+  --r-xl:   12px;
+  --r-pill: 128px;
 
-  --r-sm: 6px; --r-md: 12px; --r-lg: 20px; --r-xl: 28px;
-  --f-ui: 'Syne', sans-serif;
-  --f-mono: 'JetBrains Mono', monospace;
+  --sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
 }
 
-/* ─── RESET ───────────────────────────────────── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--f-ui);font-size:15px;line-height:1.65;overflow-x:hidden}
-a{text-decoration:none;color:inherit}
-code{font-family:var(--f-mono)}
-
-/* ─── CANVAS BG ───────────────────────────────── */
-#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
-
-/* ─── NAV ─────────────────────────────────────── */
-nav{
-  position:fixed;top:0;left:0;right:0;z-index:200;
-  height:60px;display:flex;align-items:center;justify-content:space-between;
-  padding:0 40px;
-  background:rgba(4,10,14,.85);backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
+/* ── RESET ────────────────────────────────────── */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
-.nav-logo{font-weight:800;font-size:17px;color:var(--green);letter-spacing:-.5px}
-.nav-links{display:flex;gap:28px;list-style:none}
-.nav-links a{font-size:13px;color:var(--text-2);transition:color .15s}
-.nav-links a:hover{color:var(--text)}
-.nav-gh{
-  display:flex;align-items:center;gap:6px;
-  padding:6px 14px;border-radius:var(--r-sm);
-  background:var(--green);color:#000;font-size:13px;font-weight:700;
-  transition:all .15s;
+a { text-decoration: none; color: inherit; }
+code { font-family: var(--mono); }
+
+/* ── BACKGROUND ───────────────────────────────── */
+.bg-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
-.nav-gh:hover{background:#fff;transform:translateY(-1px)}
-
-/* ─── LAYOUT ──────────────────────────────────── */
-.wrap{max-width:1180px;margin:0 auto;padding:0 40px;position:relative;z-index:1}
-section{position:relative;z-index:1}
-
-/* ─── HERO ────────────────────────────────────── */
-#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-top:60px}
-.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
-
-.hero-tag{
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--green);
-  margin-bottom:28px;
+/* dot grid */
+.bg-scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
 }
-.hero-tag span{width:28px;height:1px;background:var(--green);display:block}
-
-h1.hero-title{
-  font-size:clamp(40px,5.5vw,72px);font-weight:800;
-  line-height:1.0;letter-spacing:-.04em;
-  margin-bottom:28px;
-}
-h1.hero-title em{color:var(--green);font-style:normal;display:block}
-
-.hero-sub{
-  font-size:clamp(15px,1.6vw,18px);color:var(--text-2);
-  max-width:480px;margin-bottom:44px;line-height:1.7;font-weight:400;
+/* top glow */
+.bg-scene::after {
+  content: '';
+  position: absolute;
+  top: -300px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 960px;
+  height: 680px;
+  background: radial-gradient(ellipse at 50% 30%,
+    rgba(100,110,255,0.10) 0%,
+    rgba(80,90,255,0.04) 45%,
+    transparent 70%);
 }
 
-.install-row{
-  display:flex;align-items:center;gap:12px;
-  background:var(--raised);
-  border:1px solid var(--border-g);
-  border-radius:var(--r-md);
-  padding:13px 18px;margin-bottom:24px;
-  max-width:380px;
+/* ── LAYOUT ───────────────────────────────────── */
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
 }
-.install-row .ps{color:var(--green);opacity:.5;font-family:var(--f-mono);font-size:14px;user-select:none}
-.install-row .cmd{font-family:var(--f-mono);font-size:14px;font-weight:500;color:var(--text);flex:1}
-.copy-btn{
-  background:none;border:none;cursor:pointer;color:var(--text-3);
-  padding:4px;border-radius:4px;transition:all .2s;display:flex;align-items:center;
-}
-.copy-btn:hover{color:var(--green);background:var(--green-dim)}
+section { position: relative; z-index: 1; }
 
-.hero-ctas{display:flex;gap:12px;flex-wrap:wrap}
-.btn{
-  display:inline-flex;align-items:center;gap:7px;
-  padding:11px 22px;border-radius:var(--r-sm);
-  font-family:var(--f-ui);font-size:13px;font-weight:600;
-  cursor:pointer;border:none;transition:all .18s;
+/* ── NAV ──────────────────────────────────────── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border-bottom: 1px solid var(--border);
 }
-.btn-primary{background:var(--green);color:#000}
-.btn-primary:hover{background:#fff;transform:translateY(-1px);box-shadow:0 0 28px var(--green-glow)}
-.btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border)}
-.btn-ghost:hover{border-color:var(--border-g);color:var(--text)}
+.nav-inner {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav-logo {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  list-style: none;
+  flex: 1;
+}
+.nav-links a {
+  font-size: 13px;
+  color: var(--text-2);
+  padding: 6px 10px;
+  border-radius: var(--r-md);
+  transition: color 0.15s, background 0.15s;
+}
+.nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.nav-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 
-/* ─── HERO DIAGRAM ───────────────────────────── */
-.hero-diagram{position:relative}
-.hero-diagram svg{width:100%;height:auto}
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 32px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--border-focus); background: rgba(255,255,255,0.04); }
 
-/* ─── STATS BAR ──────────────────────────────── */
-.stats-bar{
-  display:flex;flex-wrap:wrap;gap:0;
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-  margin-top:72px;
+.btn-white {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 32px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: #000;
+  background: #fff;
+  border: 1px solid #fff;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: opacity 0.15s;
 }
-.stat{
-  padding:20px 32px;border-right:1px solid var(--border);
-  display:flex;flex-direction:column;gap:3px;
-}
-.stat:last-child{border-right:none}
-.stat-k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
-.stat-v{font-size:14px;font-weight:600;color:var(--text)}
-.stat-v.g{color:var(--green)}
+.btn-white:hover { opacity: 0.88; }
 
-/* ─── SECTION HEADER ─────────────────────────── */
-.sh{margin-bottom:56px}
-.sh-tag{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--green);margin-bottom:14px}
-.sh-title{font-size:clamp(28px,3.5vw,44px);font-weight:800;letter-spacing:-.03em;line-height:1.1}
-.sh-desc{margin-top:14px;color:var(--text-2);font-size:16px;max-width:520px}
+/* ── HERO ─────────────────────────────────────── */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 24px 96px;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,0.03);
+  margin-bottom: 32px;
+  animation: up 0.5s ease both;
+}
+.hero-badge .pip {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #3ecf8e;
+  box-shadow: 0 0 6px #3ecf8e;
+  animation: blink 2.5s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.25)} }
 
-/* ─── ARCHITECTURE ───────────────────────────── */
-#arch{padding:100px 0}
-.arch-diagram{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r-xl);padding:52px 40px;
-  overflow:hidden;position:relative;
+h1 {
+  font-size: clamp(44px, 6.5vw, 80px);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1.03;
+  color: var(--text);
+  max-width: 820px;
+  margin-bottom: 24px;
+  animation: up 0.55s ease 0.08s both;
 }
-.arch-diagram svg{width:100%;height:auto;display:block}
+h1 em {
+  font-style: normal;
+  background: linear-gradient(180deg, #fff 40%, rgba(255,255,255,0.45) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-2);
+  max-width: 460px;
+  line-height: 1.65;
+  margin-bottom: 40px;
+  animation: up 0.55s ease 0.18s both;
+}
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+  animation: up 0.55s ease 0.28s both;
+}
+.btn-hero-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  background: #fff;
+  border-radius: var(--r-pill);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-hero-primary:hover { opacity: 0.86; }
+.btn-hero-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-hero-secondary:hover { border-color: var(--border-focus); background: rgba(255,255,255,0.04); }
 
-/* ─── FEATURES ───────────────────────────────── */
-#features{padding:100px 0}
-.feat-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
-  background:var(--border);border:1px solid var(--border);
-  border-radius:var(--r-xl);overflow:hidden;
+.install-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  animation: up 0.55s ease 0.36s both;
 }
-.feat{
-  background:var(--surface);padding:36px;
-  transition:background .25s;
+.install-pill:hover { border-color: var(--border-strong); }
+.install-pill .ps { color: var(--text-3); font-family: var(--mono); font-size: 13px; user-select: none; }
+.install-pill .cmd { font-family: var(--mono); font-size: 13px; color: var(--text); }
+.copy-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-3);
+  display: flex; align-items: center;
+  padding: 3px; border-radius: var(--r-sm);
+  transition: color 0.15s;
 }
-.feat:hover{background:var(--raised)}
-.feat.span2{grid-column:span 2}
-.feat-vis{margin-bottom:20px}
-.feat-title{font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:10px}
-.feat-desc{font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:18px}
-.feat-code{
-  background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);
-  padding:12px 14px;font-family:var(--f-mono);font-size:11.5px;
-  color:var(--green);line-height:1.6;
-}
-.feat-code .dim{opacity:.35}
+.install-pill:hover .copy-btn { color: var(--text-2); }
 
-/* ─── CODE DEMO ──────────────────────────────── */
-#demo{padding:100px 0;background:linear-gradient(180deg,transparent,var(--surface) 8%,var(--surface) 92%,transparent)}
-.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
-.code-block{
-  background:var(--bg);border:1px solid var(--border);
-  border-radius:var(--r-lg);overflow:hidden;
+/* ── STATS BAR ────────────────────────────────── */
+.hero-stats {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  overflow: hidden;
+  margin-top: 72px;
+  animation: up 0.55s ease 0.5s both;
 }
-.code-head{
-  display:flex;align-items:center;gap:7px;padding:12px 18px;
-  background:var(--raised);border-bottom:1px solid var(--border);
+.stat {
+  padding: 16px 28px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
-.dot{width:10px;height:10px;border-radius:50%}
-.dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
-.code-head .fn{margin-left:6px;font-family:var(--f-mono);font-size:12px;color:var(--text-3)}
-.code-block pre{padding:24px 20px;margin:0;overflow-x:auto;font-size:12.5px;line-height:1.65}
-.code-block pre code{background:none}
+.stat:last-child { border-right: none; }
+.stat-k { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+.stat-v { font-size: 13px; font-weight: 500; color: var(--text-2); }
+.stat-v.hi { color: var(--text); }
 
-.outputs{display:flex;flex-direction:column;gap:14px}
-.out-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r-md);padding:20px;transition:border-color .25s;
+/* ── SECTION COMMON ───────────────────────────── */
+.sec-hd { margin-bottom: 48px; }
+.sec-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 14px;
 }
-.out-card.lit{border-color:var(--border-g);background:var(--raised)}
-.out-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
-.out-body{font-family:var(--f-mono);font-size:12px;color:var(--text-2);line-height:1.7}
-.ok{color:var(--green)}.warn{color:var(--orange)}.val{color:var(--blue)}
-
-/* ─── TIME TO SCIENCE ────────────────────────── */
-#tts{padding:100px 0}
-.tts-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-.tts-bars{display:flex;flex-direction:column;gap:20px}
-.tts-row{display:flex;flex-direction:column;gap:8px}
-.tts-label{font-size:13px;color:var(--text-2);display:flex;justify-content:space-between}
-.tts-label span{font-weight:600}
-.tts-track{height:36px;background:var(--surface);border-radius:6px;overflow:hidden;border:1px solid var(--border);position:relative}
-.tts-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:12px;font-size:11px;font-weight:700;letter-spacing:.05em;position:relative;overflow:hidden}
-.tts-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 70%,rgba(255,255,255,.08))}
-.tts-fill.before{background:rgba(248,113,113,.2);color:var(--red);width:100%;border:1px solid rgba(248,113,113,.3)}
-.tts-fill.after{background:var(--green-dim);color:var(--green);border:1px solid var(--border-g);transition:width 1.2s cubic-bezier(.16,1,.3,1)}
-
-.tts-table{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r-lg);overflow:hidden;
+.sec-label::before {
+  content: '';
+  display: block;
+  width: 16px; height: 1px;
+  background: var(--text-3);
 }
-.tts-table table{width:100%;border-collapse:collapse}
-.tts-table th{
-  padding:14px 20px;text-align:left;font-size:12px;
-  letter-spacing:.06em;text-transform:uppercase;
+h2 {
+  font-size: clamp(28px, 3.8vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.07;
+  color: var(--text);
 }
-.tts-table th:first-child{background:var(--raised);color:var(--text-3)}
-.tts-table th.th-bad{background:rgba(248,113,113,.07);color:var(--red);border-left:1px solid var(--border)}
-.tts-table th.th-good{background:var(--green-dim);color:var(--green);border-left:1px solid var(--border)}
-.tts-table td{padding:14px 20px;font-size:12.5px;border-top:1px solid var(--border);vertical-align:top}
-.tts-table td:first-child{background:var(--raised);color:var(--text-3);font-size:11.5px;letter-spacing:.04em}
-.tts-table td.td-bad{background:rgba(248,113,113,.04);color:var(--text-2);border-left:1px solid var(--border)}
-.tts-table td.td-good{background:rgba(0,232,122,.04);color:var(--text);border-left:1px solid var(--border)}
-.tts-table td.td-good code{color:var(--green);font-size:11.5px}
-
-/* ─── COLAB ──────────────────────────────────── */
-#colab{padding:100px 0}
-.colab-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r-xl);padding:64px;
-  display:grid;grid-template-columns:1fr auto;gap:60px;align-items:center;
-  position:relative;overflow:hidden;
+.sec-desc {
+  margin-top: 14px;
+  font-size: 16px;
+  color: var(--text-2);
+  max-width: 460px;
+  line-height: 1.65;
 }
-.colab-card::before{
-  content:'';position:absolute;top:-1px;left:-1px;right:-1px;bottom:-1px;
-  border-radius:var(--r-xl);
-  background:linear-gradient(135deg,var(--border-g),transparent 55%);
-  pointer-events:none;
+
+/* ── ARCHITECTURE ─────────────────────────────── */
+#arch { padding: 96px 0; }
+.arch-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 48px 40px;
+  overflow: hidden;
 }
-.colab-card h2{font-size:clamp(22px,2.8vw,34px);font-weight:800;letter-spacing:-.03em;margin-bottom:14px}
-.colab-card p{color:var(--text-2);font-size:16px;margin-bottom:28px}
-.colab-steps{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
-.colab-steps li{display:flex;align-items:flex-start;gap:12px;font-size:13px;color:var(--text-2)}
-.sn{
-  width:22px;height:22px;border-radius:50%;flex-shrink:0;margin-top:1px;
-  background:var(--green-dim);border:1px solid var(--border-g);
-  color:var(--green);font-size:11px;font-weight:700;
-  display:flex;align-items:center;justify-content:center;
+.arch-card svg { width: 100%; height: auto; display: block; }
+
+/* ── FEATURES ─────────────────────────────────── */
+#features { padding: 96px 0; }
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
 }
-.colab-notebook{
-  background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);
-  padding:20px;width:260px;font-family:var(--f-mono);font-size:11px;flex-shrink:0;
+.feat {
+  background: var(--bg);
+  padding: 32px;
+  transition: background 0.2s;
+  display: flex;
+  flex-direction: column;
 }
-.nb-bar{display:flex;gap:6px;margin-bottom:14px}
-.nb-cell{background:var(--raised);border-radius:4px;padding:10px 12px;margin-bottom:8px}
-.nb-in{font-size:10px;color:var(--text-3);margin-bottom:5px}
-.nb-code{color:var(--blue)}
-.nb-out{font-size:10px;color:var(--text-3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
-.nb-ok{color:var(--green)}
+.feat:hover { background: var(--surface); }
+.feat.w2 { grid-column: span 2; }
 
-/* ─── FOOTER ──────────────────────────────────── */
-footer{border-top:1px solid var(--border);padding:40px 0}
-.foot{display:flex;align-items:center;justify-content:space-between}
-.foot-logo{font-weight:800;font-size:18px;color:var(--green)}
-.foot-links{display:flex;gap:28px;list-style:none}
-.foot-links a{font-size:13px;color:var(--text-3);transition:color .15s}
-.foot-links a:hover{color:var(--text)}
-.foot-copy{font-size:12px;color:var(--text-3)}
+.feat-icon {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  font-size: 16px;
+  margin-bottom: 18px;
+  flex-shrink: 0;
+}
+.feat-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+.feat-desc {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.7;
+  margin-bottom: 18px;
+  flex: 1;
+}
+.feat-snippet {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 11px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text-2);
+}
+.s-kw  { color: #ff7b72; }
+.s-fn  { color: #d2a8ff; }
+.s-str { color: #a5d6ff; }
+.s-nm  { color: #79c0ff; }
+.s-cm  { color: #6e7681; }
 
-/* ─── REVEAL ──────────────────────────────────── */
-.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
-.reveal.in{opacity:1;transform:none}
-.stagger>*{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease}
-.stagger.in>*:nth-child(1){opacity:1;transform:none;transition-delay:.04s}
-.stagger.in>*:nth-child(2){opacity:1;transform:none;transition-delay:.09s}
-.stagger.in>*:nth-child(3){opacity:1;transform:none;transition-delay:.14s}
-.stagger.in>*:nth-child(4){opacity:1;transform:none;transition-delay:.19s}
-.stagger.in>*:nth-child(5){opacity:1;transform:none;transition-delay:.24s}
+/* terminal inside feature */
+.term-wrap {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.term-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--elevated);
+}
+.td { width: 10px; height: 10px; border-radius: 50%; }
+.td-r { background:#ff5f57; } .td-y { background:#febc2e; } .td-g { background:#28c840; }
+.term-body {
+  padding: 16px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.75;
+}
+.t-cmd { color: var(--text-3); }
+.t-ok  { color: #3ecf8e; }
+.t-hi  { color: var(--text); font-weight: 500; }
+.t-div { display: block; margin: 8px 0; height: 1px; background: var(--border); }
 
-/* ─── HERO ENTRY ──────────────────────────────── */
-@keyframes fadeUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
-.hero-tag{animation:fadeUp .55s ease .1s both}
-h1.hero-title{animation:fadeUp .65s ease .18s both}
-.hero-sub{animation:fadeUp .65s ease .3s both}
-.install-row{animation:fadeUp .65s ease .42s both}
-.hero-ctas{animation:fadeUp .65s ease .52s both}
-.hero-diagram{animation:fadeUp .8s ease .35s both}
-.stats-bar{animation:fadeUp .65s ease .65s both}
+/* ── CODE DEMO ────────────────────────────────── */
+#demo { padding: 96px 0; }
+.demo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.code-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+}
+.code-panel-head {
+  display: flex; align-items: center; gap: 7px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--elevated);
+}
+.fn-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-3);
+  margin-left: 4px;
+}
+.code-panel pre {
+  padding: 22px 20px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  overflow-x: auto;
+  color: var(--text);
+}
+.tk-kw { color: #ff7b72; }
+.tk-fn { color: #d2a8ff; }
+.tk-str { color: #a5d6ff; }
+.tk-cm { color: #6e7681; }
+.tk-nm { color: #79c0ff; }
 
-/* ─── GLOW PULSE ──────────────────────────────── */
-@keyframes gp{0%,100%{opacity:.4}50%{opacity:1}}
-.pulse{animation:gp 2s ease-in-out infinite}
+.out-stack { display: flex; flex-direction: column; gap: 12px; }
+.out-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 16px 20px;
+}
+.out-card.lit { border-color: var(--border-strong); }
+.out-lbl {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+.out-body {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--text-2);
+}
+.ok   { color: #3ecf8e; }
+.val  { color: #79c0ff; }
 
-/* ─── RESPONSIVE ──────────────────────────────── */
-@media(max-width:920px){
-  nav{padding:0 20px}
-  .nav-links{display:none}
-  .wrap{padding:0 20px}
-  .hero-grid,.demo-grid,.tts-grid,.colab-card{grid-template-columns:1fr}
-  .hero-diagram{display:none}
-  .feat-grid{grid-template-columns:1fr}
-  .feat.span2{grid-column:span 1}
-  .colab-notebook{display:none}
-  .colab-card{padding:36px 24px}
-  .foot{flex-direction:column;gap:20px;text-align:center}
+/* ── COMPARE TABLE ────────────────────────────── */
+#compare { padding: 96px 0; }
+.cmp-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+}
+.cmp-table table { width: 100%; border-collapse: collapse; }
+.cmp-table th {
+  padding: 14px 20px;
+  text-align: left;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.cmp-table th:first-child  { color: var(--text-3); background: var(--elevated); }
+.cmp-table th.h-bad  { color: #f97583; background: rgba(249,117,131,0.04); border-left: 1px solid var(--border); }
+.cmp-table th.h-good { color: #3ecf8e; background: rgba(62,207,142,0.04); border-left: 1px solid var(--border); }
+.cmp-table td {
+  padding: 14px 20px;
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.cmp-table td:first-child { color: var(--text-3); font-size: 12px; font-weight: 500; background: var(--elevated); }
+.cmp-table td.c-bad  { color: var(--text-2); border-left: 1px solid var(--border); }
+.cmp-table td.c-good { color: var(--text); border-left: 1px solid var(--border); }
+.cmp-table td.c-good code {
+  font-family: var(--mono); font-size: 12px;
+  color: #d2a8ff;
+  background: rgba(210,168,255,0.08);
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+}
+.c-bad.bad-hi  { color: #f97583; font-weight: 600; }
+.c-good.good-hi { color: #3ecf8e; font-weight: 600; }
+
+/* ── CTA ──────────────────────────────────────── */
+#cta { padding: 96px 0; }
+.cta-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 64px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 60px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.cta-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-xl);
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent 50%);
+  pointer-events: none;
+}
+.cta-card h2 { margin-bottom: 14px; }
+.cta-card .cta-desc { color: var(--text-2); font-size: 16px; margin-bottom: 28px; }
+.steps { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+.steps li { display: flex; align-items: flex-start; gap: 12px; font-size: 13px; color: var(--text-2); }
+.sn {
+  width: 22px; height: 22px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 1px;
+  background: var(--elevated);
+  border: 1px solid var(--border-strong);
+  color: var(--text-3); font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+}
+.cta-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* notebook preview */
+.nb {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 16px;
+  width: 240px;
+  font-family: var(--mono);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.nb-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+.nb-cell {
+  background: var(--elevated);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.nb-cell:last-child { margin-bottom: 0; }
+.nb-in  { font-size: 10px; color: var(--text-3); margin-bottom: 5px; }
+.nb-code { color: #79c0ff; line-height: 1.5; }
+.nb-out { font-size: 10px; color: var(--text-3); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.nb-ok  { color: #3ecf8e; }
+
+/* ── FOOTER ───────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 0;
+  position: relative; z-index: 1;
+}
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.foot-logo { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+.foot-links { display: flex; gap: 24px; list-style: none; }
+.foot-links a { font-size: 13px; color: var(--text-3); transition: color 0.15s; }
+.foot-links a:hover { color: var(--text); }
+.foot-copy { font-size: 12px; color: var(--text-3); }
+
+/* ── REVEAL ───────────────────────────────────── */
+@keyframes up {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:none; }
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+.reveal.in { opacity:1; transform:none; }
+
+/* ── RESPONSIVE ───────────────────────────────── */
+@media(max-width:900px) {
+  .nav-links    { display:none; }
+  .feat-grid    { grid-template-columns:1fr; }
+  .feat.w2      { grid-column:span 1; }
+  .demo-grid    { grid-template-columns:1fr; }
+  .hero-stats   { display:none; }
+  .cta-card     { grid-template-columns:1fr; padding:36px 24px; }
+  .nb           { display:none; }
+  .foot         { flex-direction:column; gap:20px; text-align:center; }
+  .foot-links   { flex-wrap:wrap; justify-content:center; }
+}
+@media(max-width:600px) {
+  h1 { font-size: 38px; }
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .btn-hero-primary, .btn-hero-secondary { justify-content: center; }
 }
 </style>
 </head>
 <body>
 
-<canvas id="bg"></canvas>
+<div class="bg-scene"></div>
 
 <!-- NAV -->
 <nav>
-  <div class="nav-logo">PhysLink</div>
-  <ul class="nav-links">
-    <li><a href="#arch">How it works</a></li>
-    <li><a href="#features">Features</a></li>
-    <li><a href="#demo">Quick start</a></li>
-    <li><a href="./getting-started/">Docs</a></li>
-  </ul>
-  <a href="https://github.com/Denis-hamon/physlink" class="nav-gh" target="_blank">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
-    GitHub
-  </a>
+  <div class="nav-inner">
+    <div class="nav-logo">PhysLink</div>
+    <ul class="nav-links">
+      <li><a href="#arch">Architecture</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#demo">Quick start</a></li>
+      <li><a href="./getting-started/">Docs</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="https://github.com/Denis-hamon/physlink" class="btn-ghost" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+        GitHub
+      </a>
+      <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb" class="btn-white" target="_blank">Open in Colab</a>
+    </div>
+  </div>
 </nav>
 
-<!-- ═══════════════════════════════════════════════
-     HERO
-══════════════════════════════════════════════════ -->
+<!-- HERO -->
 <section id="hero">
-  <div class="wrap">
-    <div class="hero-grid">
+  <div class="hero-badge">
+    <span class="pip"></span>
+    v0.1.2 — MIT License
+  </div>
 
-      <!-- LEFT -->
-      <div>
-        <div class="hero-tag"><span></span> Physics Simulation × Deep RL</div>
-        <h1 class="hero-title">
-          From simulator<br>
-          <em>to trained model.</em>
-        </h1>
-        <p class="hero-sub">
-          PhysLink is the adapter layer that bridges your physics simulator
-          and DreamerV3. One library. No boilerplate. One afternoon.
-        </p>
-        <div class="install-row">
-          <span class="ps">$</span>
-          <span class="cmd">pip install physlink</span>
-          <button class="copy-btn" onclick="copyCmd(this)" title="Copy">
-            <svg id="cico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          </button>
-        </div>
-        <div class="hero-ctas">
-          <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb" class="btn btn-primary" target="_blank">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Open in Colab
-          </a>
-          <a href="./getting-started/" class="btn btn-ghost">Documentation →</a>
-          <a href="./domain-scientists/" class="btn btn-ghost">Domain Scientists →</a>
-        </div>
-      </div>
+  <h1>From simulator<br><em>to trained model.</em></h1>
 
-      <!-- RIGHT — animated flow diagram -->
-      <div class="hero-diagram">
-        <svg viewBox="0 0 560 360" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <!-- flow arrow marker -->
-            <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-              <path d="M0,0 L6,3 L0,6 Z" fill="#00e87a" opacity=".7"/>
-            </marker>
-            <marker id="arrb" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-              <path d="M0,0 L6,3 L0,6 Z" fill="#60a5fa" opacity=".6"/>
-            </marker>
-            <!-- glow filter -->
-            <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-            <!-- dashed flow animation -->
-            <style>
-              .flow1{stroke-dasharray:8 5;animation:dash 1.4s linear infinite}
-              .flow2{stroke-dasharray:8 5;animation:dash 1.8s linear infinite}
-              .flow3{stroke-dasharray:6 6;animation:dash 2.2s linear infinite reverse}
-              @keyframes dash{to{stroke-dashoffset:-26}}
-              .node-pulse{animation:np 2.2s ease-in-out infinite}
-              .node-pulse2{animation:np 2.2s ease-in-out .7s infinite}
-              .node-pulse3{animation:np 2.2s ease-in-out 1.4s infinite}
-              @keyframes np{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
-            </style>
-          </defs>
+  <p class="hero-sub">
+    The adapter layer that bridges your physics simulator and DreamerV3.
+    One library. No boilerplate. One afternoon.
+  </p>
 
-          <!-- ── PHYSICS BOX (left) ── -->
-          <rect x="4" y="90" width="148" height="180" rx="12" fill="#071018" stroke="rgba(96,165,250,.25)" stroke-width="1.5"/>
-          <text x="78" y="118" text-anchor="middle" fill="#60a5fa" font-family="Syne,sans-serif" font-size="11" font-weight="700" letter-spacing="1">PHYSICS SIM</text>
+  <div class="hero-actions">
+    <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb"
+       class="btn-hero-primary" target="_blank">
+      Open in Colab
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M7 17L17 7M17 7H7M17 7v10"/>
+      </svg>
+    </a>
+    <a href="./getting-started/" class="btn-hero-secondary">Documentation</a>
+    <a href="./domain-scientists/" class="btn-hero-secondary">Domain Scientists →</a>
+  </div>
 
-          <!-- Robot arm sketch -->
-          <g transform="translate(78,175)" class="node-pulse">
-            <!-- shoulder -->
-            <circle cx="0" cy="0" r="7" fill="none" stroke="#60a5fa" stroke-width="1.5" opacity=".7"/>
-            <circle cx="0" cy="0" r="2.5" fill="#60a5fa" opacity=".7"/>
-            <!-- upper arm -->
-            <line x1="0" y1="0" x2="28" y2="-24" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" opacity=".7"/>
-            <!-- elbow -->
-            <circle cx="28" cy="-24" r="5" fill="none" stroke="#60a5fa" stroke-width="1.5" opacity=".7"/>
-            <circle cx="28" cy="-24" r="2" fill="#60a5fa" opacity=".7"/>
-            <!-- forearm -->
-            <line x1="28" y1="-24" x2="48" y2="0" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" opacity=".7"/>
-            <!-- wrist -->
-            <circle cx="48" cy="0" r="4" fill="none" stroke="#60a5fa" stroke-width="1.5" opacity=".7"/>
-            <!-- tool -->
-            <line x1="48" y1="0" x2="56" y2="10" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
-            <line x1="48" y1="0" x2="56" y2="-8" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
-          </g>
+  <div class="install-pill" onclick="copyInstall(this)" title="Copy">
+    <span class="ps">$</span>
+    <span class="cmd">pip install physlink</span>
+    <button class="copy-btn" aria-label="Copy to clipboard">
+      <svg id="copy-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2"/>
+        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+      </svg>
+    </button>
+  </div>
 
-          <text x="78" y="240" text-anchor="middle" fill="rgba(96,165,250,.4)" font-family="JetBrains Mono,monospace" font-size="9">trajectories</text>
-          <text x="78" y="254" text-anchor="middle" fill="rgba(96,165,250,.4)" font-family="JetBrains Mono,monospace" font-size="9">joints · vel · pos</text>
-
-          <!-- ── PHYSLINK BOX (center) ── -->
-          <rect x="198" y="24" width="164" height="312" rx="14" fill="#071018" stroke="rgba(0,232,122,.3)" stroke-width="1.5" filter="url(#glow)"/>
-          <!-- green top accent line -->
-          <rect x="198" y="24" width="164" height="3" rx="2" fill="#00e87a" opacity=".7"/>
-          <text x="280" y="58" text-anchor="middle" fill="#00e87a" font-family="Syne,sans-serif" font-size="13" font-weight="800" letter-spacing=".5">PhysLink</text>
-
-          <!-- 5 feature pills -->
-          <g font-family="JetBrains Mono,monospace" font-size="10">
-            <!-- doctor() -->
-            <rect x="214" y="74" width="132" height="38" rx="7" fill="rgba(0,232,122,.08)" stroke="rgba(0,232,122,.2)" stroke-width="1"/>
-            <text x="280" y="90" text-anchor="middle" fill="#00e87a" font-weight="700">doctor()</text>
-            <text x="280" y="104" text-anchor="middle" fill="rgba(0,232,122,.5)" font-size="9">env diagnostics</text>
-
-            <!-- ObsSpace -->
-            <rect x="214" y="122" width="132" height="38" rx="7" fill="rgba(96,165,250,.07)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
-            <text x="280" y="138" text-anchor="middle" fill="#60a5fa" font-weight="700">ObservationSpace</text>
-            <text x="280" y="152" text-anchor="middle" fill="rgba(96,165,250,.5)" font-size="9">space mapping</text>
-
-            <!-- ActionSpace -->
-            <rect x="214" y="170" width="132" height="38" rx="7" fill="rgba(96,165,250,.07)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
-            <text x="280" y="186" text-anchor="middle" fill="#60a5fa" font-weight="700">ActionSpace</text>
-            <text x="280" y="200" text-anchor="middle" fill="rgba(96,165,250,.5)" font-size="9">bounds · validation</text>
-
-            <!-- Checkpoint -->
-            <rect x="214" y="218" width="132" height="38" rx="7" fill="rgba(251,146,60,.07)" stroke="rgba(251,146,60,.2)" stroke-width="1"/>
-            <text x="280" y="234" text-anchor="middle" fill="#fb923c" font-weight="700">Auto-checkpoint</text>
-            <text x="280" y="248" text-anchor="middle" fill="rgba(251,146,60,.5)" font-size="9">safetensors · resume</text>
-
-            <!-- Compliance -->
-            <rect x="214" y="266" width="132" height="38" rx="7" fill="rgba(0,232,122,.08)" stroke="rgba(0,232,122,.2)" stroke-width="1"/>
-            <text x="280" y="282" text-anchor="middle" fill="#00e87a" font-weight="700">ComplianceReport</text>
-            <text x="280" y="296" text-anchor="middle" fill="rgba(0,232,122,.5)" font-size="9">invariants · violations</text>
-          </g>
-
-          <!-- ── DREAMERV3 BOX (right) ── -->
-          <rect x="408" y="90" width="148" height="180" rx="12" fill="#071018" stroke="rgba(0,232,122,.25)" stroke-width="1.5"/>
-          <text x="482" y="118" text-anchor="middle" fill="#00e87a" font-family="Syne,sans-serif" font-size="11" font-weight="700" letter-spacing="1">DREAMERV3</text>
-
-          <!-- Neural net sketch -->
-          <g transform="translate(482,175)" class="node-pulse2">
-            <!-- input layer -->
-            <circle cx="-32" cy="-20" r="5" fill="none" stroke="#00e87a" stroke-width="1.5" opacity=".6"/>
-            <circle cx="-32" cy="0"  r="5" fill="none" stroke="#00e87a" stroke-width="1.5" opacity=".6"/>
-            <circle cx="-32" cy="20" r="5" fill="none" stroke="#00e87a" stroke-width="1.5" opacity=".6"/>
-            <!-- hidden layer -->
-            <circle cx="0" cy="-28" r="5" fill="none" stroke="#00e87a" stroke-width="1.5" opacity=".6"/>
-            <circle cx="0" cy="-8"  r="5" fill="none" stroke="#00e87a" stroke-width="1.5" opacity=".6"/>
-            <circle cx="0" cy="12"  r="5" fill="none" stroke="#00e87a" stroke-width="1.5" opacity=".6"/>
-            <circle cx="0" cy="30"  r="5" fill="none" stroke="#00e87a" stroke-width="1.5" opacity=".6"/>
-            <!-- output layer -->
-            <circle cx="32" cy="-12" r="5" fill="#00e87a" opacity=".5"/>
-            <circle cx="32" cy="12"  r="5" fill="#00e87a" opacity=".5"/>
-            <!-- connections (subset) -->
-            <g stroke="rgba(0,232,122,.2)" stroke-width=".8">
-              <line x1="-27" y1="-20" x2="-5" y2="-28"/><line x1="-27" y1="-20" x2="-5" y2="-8"/>
-              <line x1="-27" y1="0"  x2="-5" y2="-8"/><line x1="-27" y1="0"  x2="-5" y2="12"/>
-              <line x1="-27" y1="20" x2="-5" y2="12"/><line x1="-27" y1="20" x2="-5" y2="30"/>
-              <line x1="5" y1="-28" x2="27" y2="-12"/><line x1="5" y1="-8" x2="27" y2="-12"/>
-              <line x1="5" y1="12" x2="27" y2="12"/><line x1="5" y1="30" x2="27" y2="12"/>
-            </g>
-          </g>
-
-          <text x="482" y="240" text-anchor="middle" fill="rgba(0,232,122,.4)" font-family="JetBrains Mono,monospace" font-size="9">world model</text>
-          <text x="482" y="254" text-anchor="middle" fill="rgba(0,232,250,.35)" font-family="JetBrains Mono,monospace" font-size="9">trained · validated</text>
-
-          <!-- ── ARROWS ── -->
-          <!-- physics → physlink (trajectories) -->
-          <path d="M152,160 L196,160" stroke="#60a5fa" stroke-width="1.5" fill="none" marker-end="url(#arrb)" class="flow2" opacity=".8"/>
-          <text x="174" y="155" text-anchor="middle" fill="rgba(96,165,250,.5)" font-family="JetBrains Mono,monospace" font-size="8.5">traj</text>
-
-          <!-- physlink → dreamerv3 (adapted) -->
-          <path d="M362,160 L406,160" stroke="#00e87a" stroke-width="1.5" fill="none" marker-end="url(#arr)" class="flow1" opacity=".8"/>
-          <text x="384" y="155" text-anchor="middle" fill="rgba(0,232,122,.5)" font-family="JetBrains Mono,monospace" font-size="8.5">adapted</text>
-
-          <!-- back arrow: dreamerv3 → physlink (model output) -->
-          <path d="M406,210 L362,210" stroke="rgba(0,232,122,.3)" stroke-width="1" fill="none" stroke-dasharray="4 4" opacity=".6"/>
-
-          <!-- back arrow: physlink → physics (compliance) -->
-          <path d="M196,210 L152,210" stroke="rgba(96,165,250,.25)" stroke-width="1" fill="none" stroke-dasharray="4 4" opacity=".5"/>
-        </svg>
-      </div>
-
-    </div><!-- /hero-grid -->
-
-    <!-- STATS BAR -->
-    <div class="stats-bar stagger">
-      <div class="stat"><span class="stat-k">Version</span><span class="stat-v g">v0.1.2</span></div>
-      <div class="stat"><span class="stat-k">License</span><span class="stat-v">MIT</span></div>
-      <div class="stat"><span class="stat-k">Python</span><span class="stat-v">≥ 3.10</span></div>
-      <div class="stat"><span class="stat-k">Backend</span><span class="stat-v">DreamerV3</span></div>
-      <div class="stat"><span class="stat-k">Colab</span><span class="stat-v g">Ready</span></div>
-      <div class="stat"><span class="stat-k">Format</span><span class="stat-v">safetensors</span></div>
-    </div>
+  <div class="hero-stats">
+    <div class="stat"><span class="stat-k">Version</span><span class="stat-v hi">v0.1.2</span></div>
+    <div class="stat"><span class="stat-k">License</span><span class="stat-v">MIT</span></div>
+    <div class="stat"><span class="stat-k">Python</span><span class="stat-v">≥ 3.10</span></div>
+    <div class="stat"><span class="stat-k">Backend</span><span class="stat-v">DreamerV3</span></div>
+    <div class="stat"><span class="stat-k">Colab</span><span class="stat-v hi">Ready</span></div>
+    <div class="stat"><span class="stat-k">Format</span><span class="stat-v">safetensors</span></div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     ARCHITECTURE — The Bridge
-══════════════════════════════════════════════════ -->
+<!-- ARCHITECTURE -->
 <section id="arch">
   <div class="wrap">
-    <div class="sh reveal">
-      <div class="sh-tag">Architecture</div>
-      <h2 class="sh-title">One library.<br>Two worlds connected.</h2>
-      <p class="sh-desc">PhysLink is a thin but complete adapter layer. It handles all the plumbing between the physics world and the RL world so you can focus on the science.</p>
+    <div class="sec-hd reveal">
+      <div class="sec-label">Architecture</div>
+      <h2>One library.<br>Two worlds connected.</h2>
+      <p class="sec-desc">A thin but complete adapter layer. All the plumbing between the physics world and the RL world—so you focus on the science.</p>
     </div>
 
-    <div class="arch-diagram reveal">
+    <div class="arch-card reveal">
       <svg viewBox="0 0 1100 280" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <marker id="a2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-            <path d="M0,0 L7,3.5 L0,7 Z" fill="#00e87a" opacity=".8"/>
+          <marker id="ar1" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="rgba(255,255,255,0.7)"/>
           </marker>
-          <marker id="a3" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-            <path d="M0,0 L7,3.5 L0,7 Z" fill="#60a5fa" opacity=".8"/>
+          <marker id="ar2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="rgba(255,255,255,0.35)"/>
           </marker>
           <style>
-            .af1{stroke-dasharray:10 6;animation:da 1.6s linear infinite}
-            .af2{stroke-dasharray:10 6;animation:da 2s linear infinite}
-            .af3{stroke-dasharray:10 6;animation:da 2.4s linear infinite reverse}
+            .fl1{stroke-dasharray:10 6;animation:da 1.8s linear infinite}
+            .fl2{stroke-dasharray:10 6;animation:da 2.2s linear infinite}
             @keyframes da{to{stroke-dashoffset:-32}}
           </style>
         </defs>
 
-        <!-- ── LEFT: YOUR LAB ── -->
-        <rect x="20" y="40" width="220" height="200" rx="14" fill="#071018" stroke="rgba(96,165,250,.2)" stroke-width="1.5"/>
-        <text x="130" y="70" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" font-weight="700" fill="#60a5fa" letter-spacing="1">YOUR LAB</text>
-        <g font-family="JetBrains Mono,monospace" font-size="10.5" fill="rgba(96,165,250,.6)">
+        <!-- YOUR LAB -->
+        <rect x="20" y="40" width="220" height="200" rx="10"
+              fill="#0a0a0a" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+        <text x="130" y="72" text-anchor="middle"
+              font-family="Geist,-apple-system,sans-serif" font-size="10" font-weight="600"
+              fill="rgba(255,255,255,0.3)" letter-spacing="0.1em">YOUR LAB</text>
+        <g font-family="ui-monospace,monospace" font-size="10.5" fill="rgba(255,255,255,0.3)">
           <text x="44" y="100">▸ MuJoCo / PyBullet</text>
           <text x="44" y="120">▸ Custom simulator</text>
           <text x="44" y="140">▸ Real robot data</text>
           <text x="44" y="160">▸ 7-DOF arm trajectories</text>
           <text x="44" y="180">▸ Proprioception data</text>
         </g>
-        <rect x="40" y="198" width="180" height="26" rx="6" fill="rgba(96,165,250,.08)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
-        <text x="130" y="215" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#60a5fa">list[dict] | TrajectoryBatch</text>
+        <rect x="40" y="200" width="180" height="24" rx="5"
+              fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <text x="130" y="216" text-anchor="middle"
+              font-family="ui-monospace,monospace" font-size="10"
+              fill="rgba(255,255,255,0.35)">TrajectoryBatch</text>
 
-        <!-- ── PHYSLINK CENTER ── -->
-        <rect x="300" y="10" width="500" height="260" rx="16" fill="#071018" stroke="rgba(0,232,122,.35)" stroke-width="2"/>
-        <rect x="300" y="10" width="500" height="4" rx="2" fill="#00e87a" opacity=".8"/>
-        <text x="550" y="50" text-anchor="middle" font-family="Syne,sans-serif" font-size="16" font-weight="800" fill="#00e87a" letter-spacing=".5">PhysLink</text>
+        <!-- PHYSLINK -->
+        <rect x="300" y="10" width="500" height="260" rx="12"
+              fill="#111111" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+        <rect x="300" y="10" width="500" height="3" rx="2" fill="rgba(255,255,255,0.85)"/>
+        <text x="550" y="48" text-anchor="middle"
+              font-family="Geist,-apple-system,sans-serif" font-size="15" font-weight="700"
+              fill="#ffffff" letter-spacing="-0.02em">PhysLink</text>
 
-        <!-- 5 feature boxes in 2 rows -->
-        <g font-family="JetBrains Mono,monospace">
-          <!-- Row 1 -->
-          <rect x="320" y="68" width="136" height="72" rx="8" fill="rgba(0,232,122,.07)" stroke="rgba(0,232,122,.2)" stroke-width="1"/>
-          <text x="388" y="92" text-anchor="middle" font-size="18">🩺</text>
-          <text x="388" y="112" text-anchor="middle" font-size="11" font-weight="700" fill="#00e87a">doctor()</text>
-          <text x="388" y="128" text-anchor="middle" font-size="9" fill="rgba(0,232,122,.5)">Go / No-Go in 15s</text>
+        <g font-family="ui-monospace,monospace">
+          <rect x="320" y="66" width="136" height="66" rx="7"
+                fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+          <text x="388" y="99" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.75)">doctor()</text>
+          <text x="388" y="116" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.28)">Go/No-Go · 15s</text>
 
-          <rect x="482" y="68" width="136" height="72" rx="8" fill="rgba(96,165,250,.07)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
-          <text x="550" y="92" text-anchor="middle" font-size="18">📐</text>
-          <text x="550" y="112" text-anchor="middle" font-size="11" font-weight="700" fill="#60a5fa">Space API</text>
-          <text x="550" y="128" text-anchor="middle" font-size="9" fill="rgba(96,165,250,.5)">Obs · Action · Explain</text>
+          <rect x="482" y="66" width="136" height="66" rx="7"
+                fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+          <text x="550" y="99" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.75)">Space API</text>
+          <text x="550" y="116" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.28)">Obs · Action · Explain</text>
 
-          <rect x="644" y="68" width="136" height="72" rx="8" fill="rgba(251,146,60,.07)" stroke="rgba(251,146,60,.2)" stroke-width="1"/>
-          <text x="712" y="92" text-anchor="middle" font-size="18">⚡</text>
-          <text x="712" y="112" text-anchor="middle" font-size="11" font-weight="700" fill="#fb923c">Auto-checkpoint</text>
-          <text x="712" y="128" text-anchor="middle" font-size="9" fill="rgba(251,146,60,.5)">safetensors · resume</text>
+          <rect x="644" y="66" width="136" height="66" rx="7"
+                fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+          <text x="712" y="99" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.75)">Auto-checkpoint</text>
+          <text x="712" y="116" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.28)">safetensors · resume</text>
 
-          <!-- Row 2 -->
-          <rect x="400" y="164" width="150" height="72" rx="8" fill="rgba(0,232,122,.07)" stroke="rgba(0,232,122,.2)" stroke-width="1"/>
-          <text x="475" y="188" text-anchor="middle" font-size="18">⚖️</text>
-          <text x="475" y="208" text-anchor="middle" font-size="11" font-weight="700" fill="#00e87a">Compliance</text>
-          <text x="475" y="224" text-anchor="middle" font-size="9" fill="rgba(0,232,122,.5)">register_invariant · report</text>
+          <rect x="400" y="162" width="150" height="66" rx="7"
+                fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+          <text x="475" y="195" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.75)">Compliance</text>
+          <text x="475" y="212" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.28)">register_invariant</text>
 
-          <rect x="570" y="164" width="150" height="72" rx="8" fill="rgba(251,146,60,.07)" stroke="rgba(251,146,60,.2)" stroke-width="1"/>
-          <text x="645" y="188" text-anchor="middle" font-size="18">🎬</text>
-          <text x="645" y="208" text-anchor="middle" font-size="11" font-weight="700" fill="#fb923c">Triptych GIF</text>
-          <text x="645" y="224" text-anchor="middle" font-size="9" fill="rgba(251,146,60,.5)">Imagination · Real · Diff</text>
+          <rect x="572" y="162" width="150" height="66" rx="7"
+                fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+          <text x="647" y="195" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.75)">Triptych GIF</text>
+          <text x="647" y="212" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.28)">Imagination · Real · Diff</text>
         </g>
 
-        <!-- ── RIGHT: DREAMERV3 ── -->
-        <rect x="860" y="40" width="220" height="200" rx="14" fill="#071018" stroke="rgba(0,232,122,.2)" stroke-width="1.5"/>
-        <text x="970" y="70" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" font-weight="700" fill="#00e87a" letter-spacing="1">DREAMERV3</text>
-        <g font-family="JetBrains Mono,monospace" font-size="10.5" fill="rgba(0,232,122,.6)">
+        <!-- DREAMERV3 -->
+        <rect x="860" y="40" width="220" height="200" rx="10"
+              fill="#0a0a0a" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+        <text x="970" y="72" text-anchor="middle"
+              font-family="Geist,-apple-system,sans-serif" font-size="10" font-weight="600"
+              fill="rgba(255,255,255,0.3)" letter-spacing="0.1em">DREAMERV3</text>
+        <g font-family="ui-monospace,monospace" font-size="10.5" fill="rgba(255,255,255,0.3)">
           <text x="880" y="100">▸ World model trained</text>
           <text x="880" y="120">▸ Physics-validated</text>
           <text x="880" y="140">▸ Compliance: PASS</text>
           <text x="880" y="160">▸ checkpoint.safetensors</text>
           <text x="880" y="180">▸ triptych.gif generated</text>
         </g>
-        <rect x="880" y="198" width="180" height="26" rx="6" fill="rgba(0,232,122,.08)" stroke="rgba(0,232,122,.2)" stroke-width="1"/>
-        <text x="970" y="215" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#00e87a">adapter.export("./run/")</text>
+        <rect x="880" y="200" width="180" height="24" rx="5"
+              fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <text x="970" y="216" text-anchor="middle"
+              font-family="ui-monospace,monospace" font-size="10"
+              fill="rgba(255,255,255,0.35)">adapter.export("./run/")</text>
 
-        <!-- ARROWS -->
-        <path d="M240,140 L296,140" stroke="#60a5fa" stroke-width="2" fill="none" marker-end="url(#a3)" class="af2"/>
-        <text x="268" y="132" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(96,165,250,.5)">trajectories</text>
+        <!-- arrows -->
+        <path d="M240,140 L296,140" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"
+              fill="none" marker-end="url(#ar2)" class="fl2"/>
+        <text x="268" y="132" text-anchor="middle"
+              font-family="ui-monospace,monospace" font-size="9"
+              fill="rgba(255,255,255,0.22)">trajectories</text>
 
-        <path d="M804,140 L856,140" stroke="#00e87a" stroke-width="2" fill="none" marker-end="url(#a2)" class="af1"/>
-        <text x="830" y="132" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(0,232,122,.5)">adapted model</text>
+        <path d="M804,140 L856,140" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"
+              fill="none" marker-end="url(#ar1)" class="fl1"/>
+        <text x="830" y="132" text-anchor="middle"
+              font-family="ui-monospace,monospace" font-size="9"
+              fill="rgba(255,255,255,0.38)">adapted model</text>
       </svg>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     FEATURES
-══════════════════════════════════════════════════ -->
+<!-- FEATURES -->
 <section id="features">
   <div class="wrap">
-    <div class="sh reveal">
-      <div class="sh-tag">Five primitives</div>
-      <h2 class="sh-title">Everything you need.<br>Nothing you don't.</h2>
+    <div class="sec-hd reveal">
+      <div class="sec-label">Five primitives</div>
+      <h2>Everything you need.<br>Nothing you don't.</h2>
     </div>
     <div class="feat-grid reveal">
 
-      <!-- doctor() — wide, with terminal visual -->
-      <div class="feat span2">
-        <div class="feat-vis">
-          <!-- Terminal scan SVG -->
-          <svg viewBox="0 0 560 110" style="width:100%;max-width:560px">
-            <rect x="0" y="0" width="560" height="110" rx="8" fill="#040a0e" stroke="rgba(0,232,122,.15)" stroke-width="1"/>
-            <text x="16" y="22" font-family="JetBrains Mono,monospace" font-size="11" fill="rgba(0,232,122,.4)">$ physlink.doctor()</text>
-            <g font-family="JetBrains Mono,monospace" font-size="10.5">
-              <text x="16" y="44" fill="rgba(255,255,255,.4)">Python 3.11.2</text>
-              <text x="160" y="44" fill="#00e87a">✓ OK</text>
-              <text x="300" y="44" fill="rgba(255,255,255,.4)">PyTorch 2.3.0</text>
-              <text x="444" y="44" fill="#00e87a">✓ OK</text>
-
-              <text x="16" y="60" fill="rgba(255,255,255,.4)">CUDA 12.1</text>
-              <text x="160" y="60" fill="#00e87a">✓ OK</text>
-              <text x="300" y="60" fill="rgba(255,255,255,.4)">VRAM 14.8 GB</text>
-              <text x="444" y="60" fill="#00e87a">✓ OK</text>
-
-              <text x="16" y="76" fill="rgba(255,255,255,.4)">Session ~8h</text>
-              <text x="160" y="76" fill="#00e87a">✓ OK</text>
-              <text x="300" y="76" fill="rgba(255,255,255,.4)">pip install</text>
-              <text x="444" y="76" fill="#00e87a">✓ OK</text>
-            </g>
-            <rect x="16" y="88" width="528" height="1" fill="rgba(0,232,122,.15)"/>
-            <text x="16" y="103" font-family="JetBrains Mono,monospace" font-size="11" fill="#00e87a" font-weight="700">→  GO  —  DreamerV3 7-DOF ready  ·  T4 GPU  ·  ~8h remaining</text>
-          </svg>
+      <!-- doctor() — wide -->
+      <div class="feat w2">
+        <div class="term-wrap">
+          <div class="term-bar">
+            <div class="td td-r"></div>
+            <div class="td td-y"></div>
+            <div class="td td-g"></div>
+          </div>
+          <div class="term-body">
+            <span class="t-cmd">$ </span>physlink.doctor()<br>
+            &nbsp;<br>
+            Python 3.11.2 &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-ok">✓ OK</span>&nbsp;&nbsp; | &nbsp;PyTorch 2.3.0 &nbsp;&nbsp;<span class="t-ok">✓ OK</span><br>
+            CUDA 12.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-ok">✓ OK</span>&nbsp;&nbsp; | &nbsp;VRAM 14.8 GB &nbsp;&nbsp;<span class="t-ok">✓ OK</span><br>
+            Session ~8h &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-ok">✓ OK</span><br>
+            <span class="t-div"></span>
+            <span class="t-hi">→ GO — DreamerV3 7-DOF ready · T4 GPU · ~8h remaining</span>
+          </div>
         </div>
-        <div class="feat-title">🩺 Zero-friction diagnostics</div>
+        <div class="feat-title">Zero-friction diagnostics</div>
         <p class="feat-desc">One call scans your entire environment — Python, PyTorch, CUDA, VRAM, Colab session time. Returns a Go/No-Go verdict in under 15 seconds with one actionable fix per failed check. No more silent OOM at step 8 000.</p>
-        <div class="feat-code">physlink.doctor()  <span class="dim"># → GO ✓ | T4 · 14.8 GB · ~8h remaining</span></div>
+        <div class="feat-snippet"><span class="s-fn">physlink</span>.<span class="s-fn">doctor</span>() <span class="s-cm"># → GO ✓ | T4 · 14.8 GB · ~8h remaining</span></div>
       </div>
 
-      <!-- Space API — with dimension diagram -->
+      <!-- Space API -->
       <div class="feat">
-        <div class="feat-vis">
-          <svg viewBox="0 0 240 90" style="width:100%;max-width:240px">
-            <!-- obs space box -->
-            <rect x="4" y="10" width="100" height="70" rx="7" fill="rgba(96,165,250,.07)" stroke="rgba(96,165,250,.25)" stroke-width="1"/>
-            <text x="54" y="30" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#60a5fa" font-weight="700">ObsSpace</text>
-            <text x="54" y="46" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(96,165,250,.5)">7 joints</text>
-            <text x="54" y="60" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(96,165,250,.5)">+ velocity</text>
-            <text x="54" y="73" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(96,165,250,.5)">dim: 14</text>
-            <!-- arrow -->
-            <path d="M108,45 L132,45" stroke="rgba(0,232,122,.6)" stroke-width="1.5" marker-end="url(#a2)" fill="none"/>
-            <!-- action space -->
-            <rect x="136" y="10" width="100" height="70" rx="7" fill="rgba(0,232,122,.07)" stroke="rgba(0,232,122,.25)" stroke-width="1"/>
-            <text x="186" y="30" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#00e87a" font-weight="700">ActSpace</text>
-            <text x="186" y="46" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(0,232,122,.5)">dims: 7</text>
-            <text x="186" y="60" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(0,232,250,.5)">[-1.0, 1.0]</text>
-            <text x="186" y="73" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(0,232,122,.5)">validated ✓</text>
-          </svg>
-        </div>
-        <div class="feat-title">📐 Universal Space API</div>
-        <p class="feat-desc">Define observation and action spaces in one line. Immediate type/dimension validation on creation. Each object exposes <code style="color:var(--blue)">.explain()</code> for normalization metadata.</p>
-        <div class="feat-code">ObservationSpace.from_proprioception(<br>&nbsp;&nbsp;joints=7, include_velocity=True<br>)</div>
+        <div class="feat-icon">📐</div>
+        <div class="feat-title">Universal Space API</div>
+        <p class="feat-desc">Define observation and action spaces in one line. Immediate type/dimension validation on creation. Each object exposes <code style="color:#79c0ff">.explain()</code> for normalization metadata.</p>
+        <div class="feat-snippet">
+<span class="s-fn">ObservationSpace</span>.from_proprioception(<br>
+&nbsp;&nbsp;joints=<span class="s-nm">7</span>, include_velocity=<span class="s-kw">True</span><br>
+)</div>
       </div>
 
-      <!-- Checkpoint — with timeline visual -->
+      <!-- Checkpoint -->
       <div class="feat">
-        <div class="feat-vis">
-          <svg viewBox="0 0 240 80" style="width:100%;max-width:240px">
-            <!-- timeline bar -->
-            <line x1="16" y1="40" x2="224" y2="40" stroke="rgba(251,146,60,.2)" stroke-width="2"/>
-            <!-- checkpoints -->
-            <g fill="none" stroke="#fb923c" stroke-width="1.5" font-family="JetBrains Mono,monospace" font-size="8.5" text-anchor="middle">
-              <circle cx="60" cy="40" r="6" fill="rgba(251,146,60,.2)"/>
-              <text x="60" y="28" fill="rgba(251,146,60,.5)">1000</text>
-              <text x="60" y="57" fill="#fb923c">ckpt ✓</text>
-              <circle cx="120" cy="40" r="6" fill="rgba(251,146,60,.2)"/>
-              <text x="120" y="28" fill="rgba(251,146,60,.5)">2000</text>
-              <text x="120" y="57" fill="#fb923c">ckpt ✓</text>
-              <circle cx="180" cy="40" r="6" fill="rgba(251,146,60,.2)"/>
-              <text x="180" y="28" fill="rgba(251,146,60,.5)">3000</text>
-              <text x="180" y="57" fill="#fb923c">ckpt ✓</text>
-              <!-- disconnect symbol -->
-              <path d="M195,35 L210,25" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/>
-              <path d="M210,35 L224,25" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/>
-              <text x="210" y="70" fill="rgba(248,113,113,.6)">disconnect</text>
-              <!-- resume arrow -->
-              <path d="M200,40 L224,40" stroke="rgba(0,232,122,.6)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a2)" fill="none"/>
-            </g>
-          </svg>
-        </div>
-        <div class="feat-title">⚡ Auto-checkpoint</div>
-        <p class="feat-desc">Safetensors checkpoints every N steps with embedded metadata. Colab session disconnect? PhysLink resumes from the last saved checkpoint automatically. No lost GPU hours.</p>
-        <div class="feat-code">adapter.fit(traj, steps=10_000)<br><span class="dim"># → step_1000.safetensors saved</span></div>
+        <div class="feat-icon">⚡</div>
+        <div class="feat-title">Auto-checkpoint</div>
+        <p class="feat-desc">Safetensors checkpoints every N steps with embedded metadata. Colab disconnect? PhysLink resumes from the last saved checkpoint automatically. No lost GPU hours.</p>
+        <div class="feat-snippet">
+adapter.<span class="s-fn">fit</span>(traj, steps=<span class="s-nm">10_000</span>)<br>
+<span class="s-cm"># → step_1000.safetensors saved</span></div>
       </div>
 
-      <!-- Compliance — with distribution plot -->
+      <!-- Compliance -->
       <div class="feat">
-        <div class="feat-vis">
-          <svg viewBox="0 0 240 90" style="width:100%;max-width:240px">
-            <!-- axes -->
-            <line x1="24" y1="70" x2="228" y2="70" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
-            <line x1="24" y1="15" x2="24" y2="70" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
-            <!-- histogram bars (distribution of residuals) -->
-            <g fill="rgba(0,232,122,.3)" stroke="rgba(0,232,122,.5)" stroke-width="1">
-              <rect x="32" y="55" width="14" height="15"/>
-              <rect x="50" y="42" width="14" height="28"/>
-              <rect x="68" y="28" width="14" height="42"/>
-              <rect x="86" y="22" width="14" height="48"/>
-              <rect x="104" y="30" width="14" height="40"/>
-              <rect x="122" y="44" width="14" height="26"/>
-              <rect x="140" y="54" width="14" height="16"/>
-              <rect x="158" y="62" width="14" height="8"/>
-            </g>
-            <!-- threshold line -->
-            <line x1="180" y1="15" x2="180" y2="70" stroke="#f87171" stroke-width="1.5" stroke-dasharray="4 3"/>
-            <text x="183" y="25" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#f87171">threshold</text>
-            <text x="183" y="36" font-family="JetBrains Mono,monospace" font-size="8.5" fill="rgba(248,113,113,.6)">0.05</text>
-            <!-- PASS label -->
-            <text x="90" y="14" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" fill="#00e87a">PASS — 0 violations / 1000</text>
-          </svg>
-        </div>
-        <div class="feat-title">⚖️ Physical compliance</div>
+        <div class="feat-icon">⚖️</div>
+        <div class="feat-title">Physical compliance</div>
         <p class="feat-desc">Register physical invariants as plain Python callables. Hard mode rejects trajectories; soft mode penalizes loss. Structured violation reports with trajectory-level diagnostics.</p>
-        <div class="feat-code">physlink.register_invariant(<br>&nbsp;&nbsp;adapter, "energy", fn=energy_fn,<br>&nbsp;&nbsp;tolerance=0.05, mode="hard"<br>)</div>
+        <div class="feat-snippet">
+<span class="s-fn">physlink</span>.register_invariant(<br>
+&nbsp;&nbsp;adapter, <span class="s-str">"energy"</span>, fn=energy_fn,<br>
+&nbsp;&nbsp;tolerance=<span class="s-nm">0.05</span>, mode=<span class="s-str">"hard"</span><br>
+)</div>
       </div>
 
-      <!-- Triptych — with 3 panel visual -->
+      <!-- Triptych -->
       <div class="feat">
-        <div class="feat-vis">
-          <svg viewBox="0 0 240 80" style="width:100%;max-width:240px">
-            <g font-family="JetBrains Mono,monospace" font-size="9" text-anchor="middle">
-              <!-- Panel 1: Imagination -->
-              <rect x="4" y="14" width="70" height="52" rx="5" fill="rgba(96,165,250,.08)" stroke="rgba(96,165,250,.25)" stroke-width="1"/>
-              <text x="39" y="28" fill="rgba(96,165,250,.5)">Imagination</text>
-              <path d="M14,52 Q24,30 34,42 Q44,55 54,38 Q60,28 64,46" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>
-
-              <!-- Panel 2: Real -->
-              <rect x="85" y="14" width="70" height="52" rx="5" fill="rgba(0,232,122,.08)" stroke="rgba(0,232,122,.25)" stroke-width="1"/>
-              <text x="120" y="28" fill="rgba(0,232,122,.5)">Real</text>
-              <path d="M95,48 Q105,32 115,44 Q125,57 135,40 Q141,30 145,48" fill="none" stroke="#00e87a" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>
-
-              <!-- Panel 3: Difference -->
-              <rect x="166" y="14" width="70" height="52" rx="5" fill="rgba(251,146,60,.08)" stroke="rgba(251,146,60,.25)" stroke-width="1"/>
-              <text x="201" y="28" fill="rgba(251,146,60,.5)">Difference</text>
-              <!-- small noise pattern -->
-              <path d="M176,50 Q183,44 190,47 Q197,51 204,43 Q211,36 218,48 Q222,53 226,46" fill="none" stroke="#fb923c" stroke-width="1" stroke-linecap="round" opacity=".6"/>
-            </g>
-            <text x="120" y="10" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,.2)">→ triptych.gif  ·  renders inline in Colab in &lt;10s</text>
-          </svg>
-        </div>
-        <div class="feat-title">🎬 Triptych visualization</div>
+        <div class="feat-icon">🎬</div>
+        <div class="feat-title">Triptych visualization</div>
         <p class="feat-desc">Three-panel GIF — Imagination, Real, Difference — renders inline in Colab in under 10 seconds. The Time-to-Science callout computes elapsed time vs a from-scratch baseline.</p>
-        <div class="feat-code">adapter.visualize(trajectories)<br><span class="dim"># → triptych.gif renders inline</span></div>
+        <div class="feat-snippet">
+adapter.<span class="s-fn">visualize</span>(trajectories)<br>
+<span class="s-cm"># → triptych.gif renders inline</span></div>
       </div>
 
-    </div><!-- /feat-grid -->
+    </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     CODE DEMO
-══════════════════════════════════════════════════ -->
+<!-- CODE DEMO -->
 <section id="demo">
   <div class="wrap">
-    <div class="sh reveal">
-      <div class="sh-tag">Quick start</div>
-      <h2 class="sh-title">Five steps.<br>Full pipeline.</h2>
-      <p class="sh-desc">From a blank Colab session to a validated, exported adapted model.</p>
+    <div class="sec-hd reveal">
+      <div class="sec-label">Quick start</div>
+      <h2>Five steps.<br>Full pipeline.</h2>
+      <p class="sec-desc">From a blank Colab session to a validated, exported adapted model.</p>
     </div>
+
     <div class="demo-grid reveal">
-      <div class="code-block">
-        <div class="code-head">
-          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-          <span class="fn">quickstart.py</span>
+      <div class="code-panel">
+        <div class="code-panel-head">
+          <div class="td td-r"></div><div class="td td-y"></div><div class="td td-g"></div>
+          <span class="fn-label">quickstart.py</span>
         </div>
-        <pre><code class="language-python">import physlink
+        <pre><code><span class="tk-kw">import</span> physlink
 
-# 1 — Verify environment (15 seconds)
-physlink.doctor()
+<span class="tk-cm"># 1 — Verify environment (15 seconds)</span>
+physlink.<span class="tk-fn">doctor</span>()
 
-# 2 — Define robot spaces
-obs = physlink.ObservationSpace.from_proprioception(
-    joints=7,
-    include_velocity=True,
+<span class="tk-cm"># 2 — Define robot spaces</span>
+obs = physlink.<span class="tk-fn">ObservationSpace</span>.<span class="tk-fn">from_proprioception</span>(
+    joints=<span class="tk-nm">7</span>,
+    include_velocity=<span class="tk-kw">True</span>,
 )
-act = physlink.ActionSpace.continuous(
-    dims=7,
-    bounds=(-1.0, 1.0),
+act = physlink.<span class="tk-fn">ActionSpace</span>.<span class="tk-fn">continuous</span>(
+    dims=<span class="tk-nm">7</span>,
+    bounds=(<span class="tk-nm">-1.0</span>, <span class="tk-nm">1.0</span>),
 )
 
-# 3 — Adapt to DreamerV3
-adapter = physlink.DreamerV3Adapter(obs, act)
-adapter.fit(trajectories, steps=10_000)
+<span class="tk-cm"># 3 — Adapt to DreamerV3</span>
+adapter = physlink.<span class="tk-fn">DreamerV3Adapter</span>(obs, act)
+adapter.<span class="tk-fn">fit</span>(trajectories, steps=<span class="tk-nm">10_000</span>)
 
-# 4 — Register physical invariant &amp; validate
-physlink.register_invariant(
-    adapter, "energy",
-    fn=lambda traj: compute_energy(traj),
-    tolerance=0.05,
+<span class="tk-cm"># 4 — Register invariant &amp; validate</span>
+physlink.<span class="tk-fn">register_invariant</span>(
+    adapter, <span class="tk-str">"energy"</span>,
+    fn=<span class="tk-kw">lambda</span> traj: <span class="tk-fn">compute_energy</span>(traj),
+    tolerance=<span class="tk-nm">0.05</span>,
 )
-report = adapter.compliance_report()
-report.plot()   # inline Colab histogram
+report = adapter.<span class="tk-fn">compliance_report</span>()
+report.<span class="tk-fn">plot</span>()
 
-# 5 — Visualise &amp; export
-adapter.visualize(trajectories)   # triptych GIF
-adapter.export("./run-2026/")</code></pre>
+<span class="tk-cm"># 5 — Visualize &amp; export</span>
+adapter.<span class="tk-fn">visualize</span>(trajectories)
+adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</span>)</code></pre>
       </div>
 
-      <div class="outputs stagger">
+      <div class="out-stack">
         <div class="out-card lit">
-          <div class="out-label">physlink.doctor()</div>
+          <div class="out-lbl">physlink.doctor()</div>
           <div class="out-body">
-            Python 3.11.2 &nbsp;&nbsp;<span class="ok">OK</span>&nbsp;&nbsp;|&nbsp;&nbsp;PyTorch 2.3 &nbsp;<span class="ok">OK</span><br>
-            CUDA 12.1 &nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">OK</span>&nbsp;&nbsp;|&nbsp;&nbsp;VRAM 14.8 GB <span class="ok">OK</span><br>
-            Session ~8h &nbsp;&nbsp;<span class="ok">OK</span><br>
-            ─────────────────────────────<br>
-            <span class="ok">→ GO  DreamerV3 7-DOF ready</span>
+            Python 3.11.2 &nbsp;<span class="ok">OK</span> &nbsp;|&nbsp; PyTorch 2.3 <span class="ok">OK</span><br>
+            CUDA 12.1 &nbsp;&nbsp;&nbsp;<span class="ok">OK</span> &nbsp;|&nbsp; VRAM 14.8 GB <span class="ok">OK</span><br>
+            Session ~8h &nbsp;<span class="ok">OK</span><br>
+            ──────────────────────────────<br>
+            <span class="ok">→ GO &nbsp;DreamerV3 7-DOF ready</span>
           </div>
         </div>
         <div class="out-card">
-          <div class="out-label">adapter.fit() progress</div>
+          <div class="out-lbl">adapter.fit() progress</div>
           <div class="out-body">
             Step <span class="val">1000</span>/10000 &nbsp;ETA <span class="val">38m</span><br>
-            Prediction: <span class="ok">OK</span> &nbsp;Throughput: <span class="val">12.4 step/s</span><br>
+            Throughput: <span class="val">12.4 step/s</span><br>
             <span class="ok">✓</span> checkpoint → step_1000.safetensors
           </div>
         </div>
         <div class="out-card">
-          <div class="out-label">report.summary()</div>
+          <div class="out-lbl">report.summary()</div>
           <div class="out-body">
             energy: <span class="ok">PASS</span><br>
             max_residual=<span class="val">0.031</span>, threshold=<span class="val">0.05</span><br>
@@ -869,7 +1014,7 @@ adapter.export("./run-2026/")</code></pre>
           </div>
         </div>
         <div class="out-card">
-          <div class="out-label">adapter.export()</div>
+          <div class="out-lbl">adapter.export()</div>
           <div class="out-body">
             <span class="ok">✓</span> triptych.gif<br>
             <span class="ok">✓</span> config.yaml<br>
@@ -882,134 +1027,95 @@ adapter.export("./run-2026/")</code></pre>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     TIME TO SCIENCE
-══════════════════════════════════════════════════ -->
-<section id="tts">
+<!-- COMPARISON -->
+<section id="compare">
   <div class="wrap">
-    <div class="sh reveal">
-      <div class="sh-tag">Time to Science</div>
-      <h2 class="sh-title">The hours you get back.</h2>
-      <p class="sh-desc">Measured time from clean environment to first validated adapted model.</p>
+    <div class="sec-hd reveal">
+      <div class="sec-label">Time to Science</div>
+      <h2>The hours you get back.</h2>
+      <p class="sec-desc">Measured time from clean environment to first validated adapted model.</p>
     </div>
-    <div class="tts-grid reveal">
-
-      <!-- bar chart -->
-      <div class="tts-bars">
-        <div class="tts-row">
-          <div class="tts-label">Without PhysLink <span>3–5 days</span></div>
-          <div class="tts-track">
-            <div class="tts-fill before">3–5 DAYS &nbsp;████████████████████████████████████</div>
-          </div>
-        </div>
-        <div class="tts-row">
-          <div class="tts-label">With PhysLink <span style="color:var(--green)">1 afternoon</span></div>
-          <div class="tts-track">
-            <div class="tts-fill after" id="after-bar" style="width:18%">1 AFTERNOON</div>
-          </div>
-        </div>
-
-        <div style="height:24px"></div>
-
-        <div class="tts-row">
-          <div class="tts-label">Space mapping <span>Without: ~1 day &nbsp;/&nbsp; With: <span style="color:var(--green)">1 line</span></span></div>
-          <div class="tts-track" style="height:28px">
-            <div style="position:absolute;left:0;top:0;height:100%;width:100%;background:rgba(248,113,113,.12);border-radius:6px"></div>
-            <div style="position:absolute;left:0;top:0;height:100%;width:4%;background:var(--green-dim);border-radius:6px;border-right:1px solid var(--border-g)"></div>
-          </div>
-        </div>
-        <div class="tts-row">
-          <div class="tts-label">Checkpoint logic <span>Without: ~4h &nbsp;/&nbsp; With: <span style="color:var(--green)">automatic</span></span></div>
-          <div class="tts-track" style="height:28px">
-            <div style="position:absolute;left:0;top:0;height:100%;width:100%;background:rgba(248,113,113,.12);border-radius:6px"></div>
-            <div style="position:absolute;left:0;top:0;height:100%;width:2%;background:var(--green-dim);border-radius:6px;border-right:1px solid var(--border-g)"></div>
-          </div>
-        </div>
-        <div class="tts-row">
-          <div class="tts-label">Physics validation <span>Without: ~2h &nbsp;/&nbsp; With: <span style="color:var(--green)">one call</span></span></div>
-          <div class="tts-track" style="height:28px">
-            <div style="position:absolute;left:0;top:0;height:100%;width:100%;background:rgba(248,113,113,.12);border-radius:6px"></div>
-            <div style="position:absolute;left:0;top:0;height:100%;width:3%;background:var(--green-dim);border-radius:6px;border-right:1px solid var(--border-g)"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- comparison table -->
-      <div class="tts-table">
-        <table>
-          <thead><tr>
+    <div class="cmp-table reveal">
+      <table>
+        <thead>
+          <tr>
             <th>Task</th>
-            <th class="th-bad">Without</th>
-            <th class="th-good">With PhysLink</th>
-          </tr></thead>
-          <tbody>
-            <tr>
-              <td>Env diagnostics</td>
-              <td class="td-bad">Debug silent OOM at step 8 000</td>
-              <td class="td-good"><code>physlink.doctor()</code></td>
-            </tr>
-            <tr>
-              <td>Space definitions</td>
-              <td class="td-bad">Write framework-specific mappings per adapter</td>
-              <td class="td-good"><code>ObservationSpace.from_proprioception()</code></td>
-            </tr>
-            <tr>
-              <td>Session disconnect</td>
-              <td class="td-bad">Lose 3h of T4 training</td>
-              <td class="td-good">Resume from last checkpoint automatically</td>
-            </tr>
-            <tr>
-              <td>Physics check</td>
-              <td class="td-bad">Manually verify energy conservation</td>
-              <td class="td-good"><code>compliance_report()</code></td>
-            </tr>
-            <tr>
-              <td>Model diagnosis</td>
-              <td class="td-bad">Stare at loss curves</td>
-              <td class="td-good">Triptych GIF — Imagination / Real / Diff</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
+            <th class="h-bad">Without PhysLink</th>
+            <th class="h-good">With PhysLink</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Env diagnostics</td>
+            <td class="c-bad">Debug silent OOM at step 8 000</td>
+            <td class="c-good"><code>physlink.doctor()</code></td>
+          </tr>
+          <tr>
+            <td>Space definitions</td>
+            <td class="c-bad">Write framework-specific mappings per adapter</td>
+            <td class="c-good"><code>ObservationSpace.from_proprioception()</code></td>
+          </tr>
+          <tr>
+            <td>Session disconnect</td>
+            <td class="c-bad">Lose 3h of T4 training</td>
+            <td class="c-good">Resume from last checkpoint automatically</td>
+          </tr>
+          <tr>
+            <td>Physics check</td>
+            <td class="c-bad">Manually verify energy conservation</td>
+            <td class="c-good"><code>compliance_report()</code></td>
+          </tr>
+          <tr>
+            <td>Model diagnosis</td>
+            <td class="c-bad">Stare at loss curves</td>
+            <td class="c-good">Triptych GIF — Imagination / Real / Diff</td>
+          </tr>
+          <tr>
+            <td>Total</td>
+            <td class="c-bad bad-hi">3–5 days</td>
+            <td class="c-good good-hi">1 afternoon</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     COLAB CTA
-══════════════════════════════════════════════════ -->
-<section id="colab">
+<!-- CTA -->
+<section id="cta">
   <div class="wrap">
-    <div class="colab-card reveal">
+    <div class="cta-card reveal">
       <div>
         <h2>Start in Colab.<br>Free T4 GPU included.</h2>
-        <p>No local CUDA setup. No conda environment. Open the notebook, select T4 runtime, run all cells.</p>
-        <ul class="colab-steps">
+        <p class="cta-desc">No local CUDA setup. No conda environment. Open the notebook, select T4 runtime, run all cells.</p>
+        <ul class="steps">
           <li><div class="sn">1</div> Open the Colab quickstart notebook</li>
           <li><div class="sn">2</div> Runtime → Change runtime type → <strong style="color:var(--text)">T4 GPU</strong></li>
-          <li><div class="sn">3</div> Run all — <code style="color:var(--green)">physlink.doctor()</code> confirms readiness</li>
+          <li><div class="sn">3</div> Run all — <code style="color:#d2a8ff;font-family:var(--mono)">physlink.doctor()</code> confirms readiness</li>
           <li><div class="sn">4</div> Bring your trajectories. Adapt.</li>
         </ul>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb" class="btn btn-primary" target="_blank">
-            Open Quickstart Notebook →
+        <div class="cta-btns">
+          <a href="https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb"
+             class="btn-hero-primary" target="_blank">
+            Open Quickstart Notebook
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M7 17L17 7M17 7H7M17 7v10"/>
+            </svg>
           </a>
-          <a href="./domain-scientists/" class="btn btn-ghost" target="_blank">Domain Scientists Guide</a>
+          <a href="./domain-scientists/" class="btn-hero-secondary">Domain Scientists Guide</a>
         </div>
       </div>
 
-      <!-- notebook preview -->
-      <div class="colab-notebook">
+      <div class="nb">
         <div class="nb-bar">
-          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <div class="td td-r"></div><div class="td td-y"></div><div class="td td-g"></div>
           <span style="margin-left:6px;color:var(--text-3);font-size:10px">quickstart.ipynb</span>
         </div>
         <div class="nb-cell">
           <div class="nb-in">In [1]:</div>
           <div class="nb-code">import physlink<br>physlink.doctor()</div>
-          <div class="nb-out">Out [1]:</div>
-          <div class="nb-ok" style="margin-top:3px">→ GO ✓ DreamerV3 ready</div>
+          <div class="nb-out">Out:</div>
+          <div class="nb-ok">→ GO ✓ DreamerV3 ready</div>
           <div style="color:var(--text-3);font-size:10px;margin-top:2px">T4 · 14.8 GB · ~8h remaining</div>
         </div>
         <div class="nb-cell">
@@ -1019,11 +1125,10 @@ adapter.export("./run-2026/")</code></pre>
         <div class="nb-cell">
           <div class="nb-in">In [3]:</div>
           <div class="nb-code">adapter.fit(traj, steps=10_000)</div>
-          <div class="nb-out">Out [3]:</div>
-          <div style="color:var(--orange);font-size:10px;margin-top:3px">Step 1000/10000 ETA 38m ✓ ckpt</div>
+          <div class="nb-out">Out:</div>
+          <div style="color:#f0a14f;font-size:10px;margin-top:3px">Step 1000/10000 ETA 38m ✓ ckpt</div>
         </div>
       </div>
-
     </div>
   </div>
 </section>
@@ -1045,99 +1150,22 @@ adapter.export("./run-2026/")</code></pre>
   </div>
 </footer>
 
-<!-- ═══════════════════════════════════════════════
-     SCRIPTS
-══════════════════════════════════════════════════ -->
 <script>
-/* ── CANVAS BACKGROUND ─────────────────────────── */
-const cv = document.getElementById('bg');
-const cx = cv.getContext('2d');
-let W, H;
-function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight}
-resize(); addEventListener('resize',resize);
+/* scroll reveal */
+const ro = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.07 });
+document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
 
-/* Trajectory particles — elliptical orbits */
-const P=[];
-for(let i=0;i<55;i++){
-  const a=Math.random()*Math.PI*2;
-  P.push({
-    cx: W*(0.2+Math.random()*.6), cy: H*(0.15+Math.random()*.7),
-    rx: 80+Math.random()*320, ry: 30+Math.random()*120,
-    angle: a, speed:(0.004+Math.random()*.009)*(Math.random()>.5?1:-1),
-    trail:[], len:15+Math.floor(Math.random()*30),
-    col:Math.random()>.65?'#60a5fa':'#00e87a',
-    op:0.2+Math.random()*.35, sz:0.8+Math.random()*1.4,
-  });
+/* copy install cmd */
+function copyInstall(el) {
+  navigator.clipboard.writeText('pip install physlink').catch(() => {});
+  const ico = document.getElementById('copy-ico');
+  if (ico) ico.innerHTML = '<polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2" fill="none"/>';
+  setTimeout(() => {
+    if (ico) ico.innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>';
+  }, 2000);
 }
-/* Grid dots */
-const GDOTS=[];
-const GX=Math.ceil(innerWidth/80)+2, GY=Math.ceil(innerHeight/80)+2;
-for(let x=0;x<GX;x++) for(let y=0;y<GY;y++){
-  GDOTS.push({x:x*80,y:y*80,op:0.03+Math.random()*.05});
-}
-
-function frame(){
-  cx.clearRect(0,0,W,H);
-
-  /* grid dots */
-  GDOTS.forEach(d=>{
-    cx.beginPath(); cx.arc(d.x,d.y,1,0,Math.PI*2);
-    cx.fillStyle=`rgba(96,165,250,${d.op})`;cx.fill();
-  });
-
-  /* trajectories */
-  P.forEach(p=>{
-    p.angle+=p.speed;
-    const wobble=Math.sin(p.angle*2.3)*18;
-    const x=p.cx+Math.cos(p.angle)*(p.rx+wobble);
-    const y=p.cy+Math.sin(p.angle)*(p.ry+wobble*.4);
-    p.trail.push({x,y});
-    if(p.trail.length>p.len) p.trail.shift();
-
-    if(p.trail.length>2){
-      cx.beginPath(); cx.moveTo(p.trail[0].x,p.trail[0].y);
-      for(let i=1;i<p.trail.length;i++) cx.lineTo(p.trail[i].x,p.trail[i].y);
-      cx.strokeStyle=p.col; cx.globalAlpha=p.op*.18;
-      cx.lineWidth=p.sz*.6; cx.stroke();
-    }
-    cx.beginPath(); cx.arc(x,y,p.sz,0,Math.PI*2);
-    cx.fillStyle=p.col; cx.globalAlpha=p.op*.9; cx.fill();
-  });
-  cx.globalAlpha=1;
-  requestAnimationFrame(frame);
-}
-frame();
-
-/* ── SCROLL REVEAL ─────────────────────────────── */
-const obs=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
-},{threshold:.1});
-document.querySelectorAll('.reveal,.stagger').forEach(el=>obs.observe(el));
-
-/* ── BAR ANIMATION ─────────────────────────────── */
-const barObs=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(e.isIntersecting){
-      const b=document.getElementById('after-bar');
-      if(b) b.style.width='18%';
-    }
-  });
-},{threshold:.3});
-const barEl=document.getElementById('after-bar');
-if(barEl){barEl.style.width='0%'; barObs.observe(barEl.parentElement);}
-
-/* ── COPY CMD ──────────────────────────────────── */
-function copyCmd(btn){
-  navigator.clipboard.writeText('pip install physlink');
-  const ico=btn.querySelector('svg');
-  if(ico) ico.innerHTML='<polyline points="20 6 9 17 4 12" stroke="var(--green)" stroke-width="2" fill="none"/>';
-  setTimeout(()=>{
-    if(ico) ico.innerHTML='<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>';
-  },2000);
-}
-
-/* ── HLJS ──────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded',()=>hljs.highlightAll());
 </script>
 </body>
 </html>
