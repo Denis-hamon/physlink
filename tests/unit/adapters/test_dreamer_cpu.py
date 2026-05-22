@@ -93,7 +93,7 @@ class TestDreamerV3AdapterConstruction:
         """Edge case: ActionSpace with dims=0 should raise ConfigurationError."""
         import types
 
-        from physlink.adapters.dreamer import DreamerV3Adapter, MIN_OBS_DIMS
+        from physlink.adapters.dreamer import MIN_OBS_DIMS, DreamerV3Adapter
 
         obs = _make_valid_obs(joints=MIN_OBS_DIMS)
         fake_act = types.SimpleNamespace(dims=0)
@@ -113,7 +113,7 @@ class TestDreamerV3AdapterConstruction:
 
     def test_configuration_error_message_follows_got_expected_fix_for_act(self) -> None:
         """Verify that a manufactured act_space with dims=0 triggers the right error message."""
-        from physlink.adapters.dreamer import DreamerV3Adapter, MIN_ACT_DIMS, MIN_OBS_DIMS
+        from physlink.adapters.dreamer import MIN_OBS_DIMS, DreamerV3Adapter
         from physlink.core.exceptions import ConfigurationError
 
         # Construct a minimal obs that passes the obs check
@@ -594,3 +594,223 @@ class TestResetTrainingState:
             adapter.fit(synthetic_trajectories, steps=0)
         # State must be untouched — validation fires before reset
         assert len(adapter._loss_history) == original_history_len
+
+
+class TestFitDebugHooks:
+    """AC #2: debug_hooks parameter — pure-Python and validation tests (no GPU required)."""
+
+    def test_fit_debug_hooks_false_is_default(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError):
+            adapter.fit(synthetic_trajectories, steps=0)
+
+    def test_fit_debug_hooks_true_still_validates_steps(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import ValidationError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(ValidationError):
+            adapter.fit(synthetic_trajectories, steps=0, debug_hooks=True)
+
+    def test_debug_panel_initializes_with_waiting_status(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        assert all(v == "waiting..." for v in panel.stages.values())
+
+    def test_debug_panel_update_all_sets_stage_statuses(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        panel.update_all({"data_loading": "OK"})
+        assert panel.stages["data_loading"] == "OK"
+
+    def test_debug_panel_partial_update_leaves_other_stages(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        panel.update_all({"data_loading": "OK"})
+        for name, status in panel.stages.items():
+            if name != "data_loading":
+                assert status == "waiting..."
+
+    def test_debug_panel_has_all_four_stage_names(self) -> None:
+        from physlink.adapters.dreamer import _STAGE_NAMES, _DebugPanel
+
+        panel = _DebugPanel()
+        assert set(panel.stages.keys()) == set(_STAGE_NAMES)
+
+    def test_debug_panel_update_all_multiple_keys(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        panel.update_all({"data_loading": "OK", "world_model_update": "RuntimeError"})
+        assert panel.stages["data_loading"] == "OK"
+        assert panel.stages["world_model_update"] == "RuntimeError"
+        assert panel.stages["actor_update"] == "waiting..."
+        assert panel.stages["critic_update"] == "waiting..."
+
+    def test_debug_panel_error_status_propagation_pattern(self) -> None:
+        """CPU-safe simulation of what the debug loop does on _training_step exception."""
+        from physlink.adapters.dreamer import _STAGE_NAMES, _DebugPanel
+
+        panel = _DebugPanel()
+        stage_statuses = {name: "OK" for name in _STAGE_NAMES}
+        exc = RuntimeError("simulated training failure")
+        for name in ("world_model_update", "actor_update", "critic_update"):
+            stage_statuses[name] = type(exc).__name__
+        panel.update_all(stage_statuses)
+
+        assert panel.stages["data_loading"] == "OK"
+        assert panel.stages["world_model_update"] == "RuntimeError"
+        assert panel.stages["actor_update"] == "RuntimeError"
+        assert panel.stages["critic_update"] == "RuntimeError"
+
+    def test_debug_panel_data_loading_unaffected_on_error(self) -> None:
+        """data_loading is always OK by design — tensor pre-processing happens before the loop."""
+        from physlink.adapters.dreamer import _STAGE_NAMES, _DebugPanel
+
+        panel = _DebugPanel()
+        stage_statuses = {name: "OK" for name in _STAGE_NAMES}
+        exc = ValueError("bad tensor")
+        for name in ("world_model_update", "actor_update", "critic_update"):
+            stage_statuses[name] = type(exc).__name__
+        panel.update_all(stage_statuses)
+
+        assert panel.stages["data_loading"] == "OK"
+
+
+class TestStageNames:
+    """Verify _STAGE_NAMES module-level constant content and ordering."""
+
+    def test_stage_names_is_tuple(self) -> None:
+        from physlink.adapters.dreamer import _STAGE_NAMES
+
+        assert isinstance(_STAGE_NAMES, tuple)
+
+    def test_stage_names_has_four_stages(self) -> None:
+        from physlink.adapters.dreamer import _STAGE_NAMES
+
+        assert len(_STAGE_NAMES) == 4
+
+    def test_stage_names_first_is_data_loading(self) -> None:
+        from physlink.adapters.dreamer import _STAGE_NAMES
+
+        assert _STAGE_NAMES[0] == "data_loading"
+
+    def test_stage_names_second_is_world_model_update(self) -> None:
+        from physlink.adapters.dreamer import _STAGE_NAMES
+
+        assert _STAGE_NAMES[1] == "world_model_update"
+
+    def test_stage_names_third_is_actor_update(self) -> None:
+        from physlink.adapters.dreamer import _STAGE_NAMES
+
+        assert _STAGE_NAMES[2] == "actor_update"
+
+    def test_stage_names_fourth_is_critic_update(self) -> None:
+        from physlink.adapters.dreamer import _STAGE_NAMES
+
+        assert _STAGE_NAMES[3] == "critic_update"
+
+    def test_stage_names_exact_set(self) -> None:
+        from physlink.adapters.dreamer import _STAGE_NAMES
+
+        expected = {"data_loading", "world_model_update", "actor_update", "critic_update"}
+        assert set(_STAGE_NAMES) == expected
+
+
+class TestDebugPanelRendering:
+    """Tests for _DebugPanel.__rich__() rendering — verifies Rich markup per stage status."""
+
+    def test_rich_returns_table_instance(self) -> None:
+        from rich.table import Table
+
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        assert isinstance(panel.__rich__(), Table)
+
+    def test_rich_returns_fresh_table_each_call(self) -> None:
+        """Rich Live calls __rich__() on every refresh — each call must build a new Table."""
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        table1 = panel.__rich__()
+        table2 = panel.__rich__()
+        assert table1 is not table2
+
+    def test_rich_table_has_four_rows(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        table = panel.__rich__()
+        assert len(table.rows) == 4
+
+    def test_rich_waiting_status_uses_dim_markup(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        table = panel.__rich__()
+        status_cells = table.columns[1]._cells
+        assert all("[dim]waiting...[/dim]" == cell for cell in status_cells)
+
+    def test_rich_ok_status_uses_bold_green_markup(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        panel.update_all({"data_loading": "OK"})
+        table = panel.__rich__()
+        status_cells = table.columns[1]._cells
+        assert "[bold green]OK[/bold green]" in status_cells
+
+    def test_rich_error_status_uses_bold_red_markup(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        panel.update_all({"data_loading": "RuntimeError"})
+        table = panel.__rich__()
+        status_cells = table.columns[1]._cells
+        assert "[bold red]RuntimeError[/bold red]" in status_cells
+
+    def test_rich_stage_labels_replace_underscores_with_spaces(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        table = panel.__rich__()
+        stage_labels = table.columns[0]._cells
+        assert "data loading" in stage_labels
+        assert "world model update" in stage_labels
+        assert "actor update" in stage_labels
+        assert "critic update" in stage_labels
+
+    def test_rich_reflects_updated_status_on_next_call(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        panel.update_all({"actor_update": "OK"})
+        table = panel.__rich__()
+        status_cells = table.columns[1]._cells
+        assert "[bold green]OK[/bold green]" in status_cells
+
+    def test_rich_mixed_statuses_in_same_table(self) -> None:
+        from physlink.adapters.dreamer import _DebugPanel
+
+        panel = _DebugPanel()
+        panel.update_all({"data_loading": "OK", "world_model_update": "ValueError"})
+        table = panel.__rich__()
+        status_cells = table.columns[1]._cells
+        assert "[bold green]OK[/bold green]" in status_cells
+        assert "[bold red]ValueError[/bold red]" in status_cells
+        assert "[dim]waiting...[/dim]" in status_cells

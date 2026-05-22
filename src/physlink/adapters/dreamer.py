@@ -16,6 +16,43 @@ _HEALTH_WINDOW: int = 50
 _HEALTH_BASELINE_STEPS: int = 10
 _ANOMALY_MULTIPLIER: float = 2.0
 
+_STAGE_NAMES: tuple[str, ...] = (
+    "data_loading",
+    "world_model_update",
+    "actor_update",
+    "critic_update",
+)
+
+
+class _DebugPanel:
+    def __init__(self) -> None:
+        self.stages: dict[str, str] = {name: "waiting..." for name in _STAGE_NAMES}
+
+    def update_all(self, statuses: dict[str, str]) -> None:
+        self.stages.update(statuses)
+
+    def __rich__(self) -> Any:  # noqa: ANN401
+        from rich.table import Table
+
+        table = Table(
+            title="[dim]Debug Hooks Panel[/dim]",
+            show_header=True,
+            box=None,
+            padding=(0, 1),
+        )
+        table.add_column("Stage", style="dim", no_wrap=True)
+        table.add_column("Status", no_wrap=True)
+        for name, status in self.stages.items():
+            label = name.replace("_", " ")
+            if status == "OK":
+                cell = "[bold green]OK[/bold green]"
+            elif status == "waiting...":
+                cell = "[dim]waiting...[/dim]"
+            else:
+                cell = f"[bold red]{status}[/bold red]"
+            table.add_row(label, cell)
+        return table
+
 
 @contextlib.contextmanager
 def _build_progress_bar(
@@ -62,6 +99,59 @@ def _build_progress_bar(
             total=steps,
             health="OK",
         )
+        yield progress, task_id
+
+
+@contextlib.contextmanager
+def _build_debug_layout(
+    steps: int,
+    panel: _DebugPanel,
+) -> Generator[tuple[Any, Any], None, None]:
+    """Context manager yielding (progress, task_id) with debug panel alongside."""
+    from rich.console import Group
+    from rich.live import Live
+    from rich.progress import (
+        BarColumn,
+        MofNCompleteColumn,
+        Progress,
+        ProgressColumn,
+        SpinnerColumn,
+        TextColumn,
+        TimeRemainingColumn,
+    )
+    from rich.text import Text
+
+    class _StepsPerSecColumn(ProgressColumn):
+        def render(self, task: Any) -> Text:  # noqa: ANN401
+            if task.speed is None:
+                return Text("? step/s", style="dim")
+            return Text(f"{task.speed:.1f} step/s", style="cyan")
+
+    class _HealthColumn(ProgressColumn):
+        def render(self, task: Any) -> Text:  # noqa: ANN401
+            health = task.fields.get("health", "OK")
+            style = "bold green" if health == "OK" else "bold red"
+            return Text(health, style=style)
+
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("•"),
+        TimeRemainingColumn(),
+        TextColumn("•"),
+        _StepsPerSecColumn(),
+        TextColumn("•"),
+        _HealthColumn(),
+    )
+    task_id = progress.add_task(
+        "[cyan]DreamerV3 adaptation",
+        total=steps,
+        health="OK",
+    )
+
+    with Live(Group(progress, panel), refresh_per_second=4):
         yield progress, task_id
 
 
@@ -291,6 +381,7 @@ class DreamerV3Adapter(BaseAdapter):
         trajectories: list[dict[str, Any]] | TrajectoryBatch,
         steps: int,
         checkpoint_interval_steps: int = 1000,
+        debug_hooks: bool = False,
     ) -> None:
         """Run the DreamerV3 adaptation loop with a live progress bar.
 
@@ -309,6 +400,10 @@ class DreamerV3Adapter(BaseAdapter):
             checkpoint_interval_steps: Interval between checkpoint saves.
                 Checkpoint writing is deferred to Story 3.4; this parameter is
                 accepted to ensure forward-compatible API. Must be > 0.
+            debug_hooks: When True, displays a debug panel alongside the progress
+                bar showing pipeline stage statuses (data_loading, world_model_update,
+                actor_update, critic_update). Each stage shows OK or a diagnostic
+                status. Defaults to False (opt-in, not default).
 
         Raises:
             ValidationError: If steps <= 0 or checkpoint_interval_steps <= 0.
@@ -319,7 +414,7 @@ class DreamerV3Adapter(BaseAdapter):
             >>> act = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
             >>> adapter = DreamerV3Adapter(obs, act)
             >>> trajectories = [{"obs": [0.1] * 7, "action": [0.0] * 7}] * 100
-            >>> adapter.fit(trajectories, steps=10)
+            >>> adapter.fit(trajectories, steps=10, debug_hooks=True)
         """
         from physlink.core.exceptions import ValidationError
 
@@ -385,18 +480,41 @@ class DreamerV3Adapter(BaseAdapter):
         optimizer = torch.optim.Adam(all_params, lr=3e-4)
         scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
 
-        with _build_progress_bar(steps) as (progress, task_id):
-            for _ in range(steps):
-                optimizer.zero_grad(set_to_none=True)
-                loss = self._training_step(tensor_batch, device)
-                scaler.scale(loss).backward()
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(all_params, max_norm=100.0)
-                scaler.step(optimizer)
-                scaler.update()
-                progress.update(
-                    task_id, advance=1, health=self._compute_health(loss.item())
-                )
+        if debug_hooks:
+            debug_panel = _DebugPanel()
+            with _build_debug_layout(steps, debug_panel) as (progress, task_id):
+                for _ in range(steps):
+                    stage_statuses = {name: "OK" for name in _STAGE_NAMES}
+                    optimizer.zero_grad(set_to_none=True)
+                    try:
+                        loss = self._training_step(tensor_batch, device)
+                    except Exception as exc:
+                        for name in ("world_model_update", "actor_update", "critic_update"):
+                            stage_statuses[name] = type(exc).__name__
+                        debug_panel.update_all(stage_statuses)
+                        raise
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(all_params, max_norm=100.0)
+                    scaler.step(optimizer)
+                    scaler.update()
+                    debug_panel.update_all(stage_statuses)
+                    progress.update(
+                        task_id, advance=1, health=self._compute_health(loss.item())
+                    )
+        else:
+            with _build_progress_bar(steps) as (progress, task_id):
+                for _ in range(steps):
+                    optimizer.zero_grad(set_to_none=True)
+                    loss = self._training_step(tensor_batch, device)
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(all_params, max_norm=100.0)
+                    scaler.step(optimizer)
+                    scaler.update()
+                    progress.update(
+                        task_id, advance=1, health=self._compute_health(loss.item())
+                    )
 
     def explain(self) -> dict[str, Any]:
         """Return a metadata dict describing this adapter's space configuration.

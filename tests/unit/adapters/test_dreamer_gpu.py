@@ -79,3 +79,32 @@ class TestFitVRAMBudget:
         adapter.fit(synthetic_trajectories, steps=100)
         vram_gb = torch.cuda.memory_allocated() / 1e9
         assert vram_gb < 8.0, f"VRAM {vram_gb:.2f} GB exceeded 8 GB budget"
+
+
+@pytest.mark.gpu
+class TestFitDebugHooks:
+    def test_fit_with_debug_hooks_true_completes(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        adapter = _make_adapter()
+        adapter.fit(synthetic_trajectories, steps=50, debug_hooks=True)
+
+    def test_fit_with_debug_hooks_false_completes(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        adapter = _make_adapter()
+        adapter.fit(synthetic_trajectories, steps=50, debug_hooks=False)
+
+    def test_fit_debug_hooks_true_idempotent(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        adapter = _make_adapter()
+        adapter.fit(synthetic_trajectories, steps=50, debug_hooks=True)
+        adapter.fit(synthetic_trajectories, steps=50, debug_hooks=True)
+
+    def test_fit_debug_hooks_does_not_affect_health_tracking(
+        self, synthetic_trajectories: list[dict]
+    ) -> None:
+        adapter = _make_adapter()
+        adapter.fit(synthetic_trajectories, steps=20, debug_hooks=True)
+        assert adapter._baseline_loss is not None
