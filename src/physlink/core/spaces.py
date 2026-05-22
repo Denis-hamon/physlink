@@ -1,9 +1,8 @@
-"""Observation and action space definitions.
-
-Story 2.2 implemented (ObservationSpace). Story 2.3 implemented (ActionSpace).
-"""
+"""Observation and action space definitions."""
 
 from __future__ import annotations
+
+from typing import Any
 
 from physlink.core.exceptions import ValidationError
 
@@ -97,6 +96,35 @@ class ObservationSpace:
 
     def __repr__(self) -> str:
         return f"ObservationSpace(dims={self.dims}, velocity={self.include_velocity})"
+
+    def explain(self) -> dict[str, Any]:
+        """Return a metadata dict describing this observation space configuration.
+
+        Returns:
+            A JSON-serializable dict with keys:
+                type: Class name ("ObservationSpace").
+                dims: Total observation dimension count.
+                joints: Raw joint count passed to from_proprioception.
+                include_velocity: Whether joint velocities are included.
+                clip_bounds: [min, max] list if set, else None.
+                normalize: Whether normalization is applied.
+
+        Example:
+            >>> obs_space = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
+            >>> info = obs_space.explain()
+            >>> info["dims"]
+            14
+            >>> info["include_velocity"]
+            True
+        """
+        return {
+            "type": "ObservationSpace",
+            "dims": self.dims,
+            "joints": self._joints,
+            "include_velocity": self.include_velocity,
+            "clip_bounds": list(self.clip_bounds) if self.clip_bounds is not None else None,
+            "normalize": self.normalize,
+        }
 
 
 class ActionSpace:
@@ -197,3 +225,28 @@ class ActionSpace:
 
     def __repr__(self) -> str:
         return f"ActionSpace(dims={self.dims})"
+
+    def explain(self) -> dict[str, Any]:
+        """Return a metadata dict describing this action space configuration.
+
+        Returns:
+            A JSON-serializable dict with keys:
+                type: Class name ("ActionSpace").
+                dims: Number of action dimensions.
+                bounds: Per-dimension [[min, max], ...] clipping bounds as lists.
+                clipping_behavior: Description of how clipping is applied.
+
+        Example:
+            >>> act_space = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+            >>> info = act_space.explain()
+            >>> info["dims"]
+            7
+            >>> info["bounds"][0]
+            [-1.0, 1.0]
+        """
+        return {
+            "type": "ActionSpace",
+            "dims": self.dims,
+            "bounds": [list(b) for b in self.bounds],
+            "clipping_behavior": "per_dimension",
+        }

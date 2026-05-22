@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 
 import pytest
 
@@ -342,3 +343,188 @@ class TestActionSpaceGaps:
     def test_mixed_int_float_bounds_succeed(self) -> None:
         result = ActionSpace.continuous(dims=1, bounds=[(0, 1.0)])  # type: ignore[list-item]
         assert isinstance(result, ActionSpace)
+
+
+class TestObservationSpaceExplain:
+    def test_explain_returns_dict(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, include_velocity=True).explain()
+        assert isinstance(result, dict)
+
+    def test_explain_contains_dims_key(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, include_velocity=True).explain()
+        assert "dims" in result
+
+    def test_explain_dims_value_with_velocity(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, include_velocity=True).explain()
+        assert result["dims"] == 14
+
+    def test_explain_dims_value_without_velocity(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, include_velocity=False).explain()
+        assert result["dims"] == 7
+
+    def test_explain_contains_joints_key(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, include_velocity=True).explain()
+        assert "joints" in result
+
+    def test_explain_joints_raw_value(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, include_velocity=True).explain()
+        assert result["joints"] == 7
+
+    def test_explain_contains_include_velocity(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, include_velocity=True).explain()
+        assert "include_velocity" in result
+        assert result["include_velocity"] is True
+
+    def test_explain_clip_bounds_none_when_not_set(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7).explain()
+        assert result["clip_bounds"] is None
+
+    def test_explain_clip_bounds_when_set(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, clip_bounds=(-1.0, 1.0)).explain()
+        assert result["clip_bounds"] == [-1.0, 1.0]
+
+    def test_explain_normalize_false_default(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7).explain()
+        assert result["normalize"] is False
+
+    def test_explain_normalize_true_when_set(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, normalize=True).explain()
+        assert result["normalize"] is True
+
+    def test_explain_json_serializable(self) -> None:
+        obs = ObservationSpace.from_proprioception(
+            joints=7, include_velocity=True, clip_bounds=(-1.0, 1.0)
+        )
+        json.dumps(obs.explain())  # must not raise
+
+    def test_explain_not_string(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7).explain()
+        assert isinstance(result, dict)
+        assert not isinstance(result, str)
+
+
+class TestActionSpaceExplain:
+    def test_explain_returns_dict(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).explain()
+        assert isinstance(result, dict)
+
+    def test_explain_contains_dims_key(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).explain()
+        assert "dims" in result
+
+    def test_explain_dims_value(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).explain()
+        assert result["dims"] == 7
+
+    def test_explain_contains_bounds_key(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).explain()
+        assert "bounds" in result
+
+    def test_explain_bounds_length(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).explain()
+        assert len(result["bounds"]) == 7
+
+    def test_explain_bounds_values(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).explain()
+        assert result["bounds"][0] == [-1.0, 1.0]
+
+    def test_explain_bounds_are_lists_not_tuples(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).explain()
+        for item in result["bounds"]:
+            assert isinstance(item, list)
+
+    def test_explain_json_serializable(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).explain()
+        json.dumps(result)  # must not raise
+
+    def test_explain_not_none(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).explain()
+        assert result is not None
+
+    def test_explain_asymmetric_bounds(self) -> None:
+        result = ActionSpace.continuous(dims=2, bounds=[(-2.0, 2.0), (0.0, 1.0)]).explain()
+        assert result["bounds"] == [[-2.0, 2.0], [0.0, 1.0]]
+
+
+class TestObservationSpaceExplainGaps:
+    """Gap tests for explain() — contract keys, type invariants, and NFR-09 idempotency."""
+
+    def test_explain_type_key_exists(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7).explain()
+        assert "type" in result
+
+    def test_explain_type_value(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7).explain()
+        assert result["type"] == "ObservationSpace"
+
+    def test_explain_normalize_key_exists(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7).explain()
+        assert "normalize" in result
+
+    def test_explain_clip_bounds_key_exists(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7).explain()
+        assert "clip_bounds" in result
+
+    def test_explain_clip_bounds_is_list_when_set(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, clip_bounds=(-1.0, 1.0)).explain()
+        assert isinstance(result["clip_bounds"], list)
+
+    def test_explain_all_expected_keys_present(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=7, include_velocity=True).explain()
+        expected_keys = {"type", "dims", "joints", "include_velocity", "clip_bounds", "normalize"}
+        assert set(result.keys()) == expected_keys
+
+    def test_explain_idempotent(self) -> None:
+        obs = ObservationSpace.from_proprioception(joints=5, include_velocity=True, normalize=True)
+        assert obs.explain() == obs.explain()
+
+    def test_explain_minimum_joints(self) -> None:
+        result = ObservationSpace.from_proprioception(joints=1).explain()
+        assert result["dims"] == 1
+        assert result["joints"] == 1
+
+    def test_explain_clip_bounds_with_normalize_true(self) -> None:
+        result = ObservationSpace.from_proprioception(
+            joints=3, clip_bounds=(-2.0, 2.0), normalize=True
+        ).explain()
+        assert result["clip_bounds"] == [-2.0, 2.0]
+        assert result["normalize"] is True
+        assert result["dims"] == 3
+
+
+class TestActionSpaceExplainGaps:
+    """Gap tests for explain() — contract keys, clipping_behavior, and NFR-09 idempotency."""
+
+    def test_explain_type_key_exists(self) -> None:
+        result = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3).explain()
+        assert "type" in result
+
+    def test_explain_type_value(self) -> None:
+        result = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3).explain()
+        assert result["type"] == "ActionSpace"
+
+    def test_explain_clipping_behavior_key_exists(self) -> None:
+        result = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3).explain()
+        assert "clipping_behavior" in result
+
+    def test_explain_clipping_behavior_value(self) -> None:
+        result = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3).explain()
+        assert result["clipping_behavior"] == "per_dimension"
+
+    def test_explain_all_expected_keys_present(self) -> None:
+        result = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3).explain()
+        expected_keys = {"type", "dims", "bounds", "clipping_behavior"}
+        assert set(result.keys()) == expected_keys
+
+    def test_explain_idempotent(self) -> None:
+        act = ActionSpace.continuous(dims=4, bounds=[(-1.0, 1.0)] * 4)
+        assert act.explain() == act.explain()
+
+    def test_explain_minimum_dims(self) -> None:
+        result = ActionSpace.continuous(dims=1, bounds=[(0.0, 1.0)]).explain()
+        assert result["dims"] == 1
+        assert result["bounds"] == [[0.0, 1.0]]
+
+    def test_explain_clipping_behavior_is_string(self) -> None:
+        result = ActionSpace.continuous(dims=2, bounds=[(-1.0, 1.0)] * 2).explain()
+        assert isinstance(result["clipping_behavior"], str)
