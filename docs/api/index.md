@@ -1,19 +1,55 @@
 # API Reference
 
-This page documents all public symbols available in PhysLink v0.1.
+PhysLink v0.1 — tous les symboles publics sont importables directement depuis `physlink`.
 
-All symbols below are importable directly from `physlink` (e.g. `from physlink import ObservationSpace`).
+```python
+from physlink import (
+    DreamerV3Adapter,
+    ObservationSpace,
+    ActionSpace,
+    ComplianceReport,
+    register_invariant,
+    doctor,
+    PhysLinkError,
+)
+```
 
-## Public Interface (`physlink`)
+---
 
-::: physlink.core.exceptions.PhysLinkError
+## Adapter
 
-::: physlink.utils.diagnostics.doctor
+The main adapter class. Wraps your simulator environment and drives the DreamerV3 training loop.
 
-## Space Configuration
+::: physlink.adapters.dreamer.DreamerV3Adapter
 
-Available as `physlink.ObservationSpace` and `physlink.ActionSpace` (also accessible via `physlink.core.spaces`).
+---
+
+## Spaces
+
+Space descriptors passed to `DreamerV3Adapter`. They validate dimensions and dtypes at construction time — no silent mismatches at runtime.
 
 ::: physlink.core.spaces.ObservationSpace
 
 ::: physlink.core.spaces.ActionSpace
+
+---
+
+## Compliance
+
+Register physical invariants (energy conservation, mass conservation, joint limits, …) and inspect violations after training.
+
+::: physlink.core.validation.register_invariant
+
+::: physlink.core.validation.ComplianceReport
+
+---
+
+## Diagnostics
+
+::: physlink.utils.diagnostics.doctor
+
+---
+
+## Exceptions
+
+::: physlink.core.exceptions.PhysLinkError
