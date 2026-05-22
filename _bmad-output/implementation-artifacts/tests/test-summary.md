@@ -1,3 +1,59 @@
+# Test Automation Summary — Story 5.2: Lab Adoption Guide
+
+**Date:** 2026-05-22
+**Framework:** pytest 9.0.3 / Python 3.12.1
+**Story file:** `_bmad-output/implementation-artifacts/5-2-lab-adoption-guide.md`
+
+---
+
+## Tests générés (ajouts QA — gaps)
+
+### Tests d'intégration — `tests/integration/test_lab_adoption_guide.py` (+16 tests de gap)
+
+| Classe | Tests | Gap comblé |
+|--------|-------|-----------|
+| `TestBenchmarkPerformanceSection` | +2 | JSON ET badge (AND, pas OR) |
+| `TestReadmeLink` | +3 | AC #2 entièrement manquant |
+| `TestPrerequisitesSection` | +4 | pip install, version 0.1.2, doctor() |
+| `TestCodeBlockQuality` | +5 | Types dans vrais blocs ```python |
+| `TestBibTexCodeBlock` | +2 | Bloc ```bibtex + champ version |
+
+**Total : 11 tests initiaux → 27 tests**
+
+## Gaps couverts
+
+| Gap | Impact | Tests ajoutés |
+|-----|--------|---------------|
+| AC #2 README link — entièrement non testé | ⚠️ Critique | `TestReadmeLink` (3 tests) |
+| Types dans des blocs ```python (pas juste prose) | Moyen | `TestCodeBlockQuality` (5 tests) |
+| Section Prerequisites (pip install, version, doctor) | Moyen | `TestPrerequisitesSection` (4 tests) |
+| BibTeX dans bloc ```bibtex + champ version | Faible | `TestBibTexCodeBlock` (2 tests) |
+| Benchmark JSON ET badge (AND pas OR) | Faible | `test_contains_benchmark_baseline_json`, `test_contains_ci_badge_reference` |
+
+## Couverture AC
+
+| Critère AC | Avant | Après |
+|------------|-------|-------|
+| AC #1 – File exists | ✅ | ✅ |
+| AC #1 – AdaptationConfig/Run (pas AdaptationJob) | ✅ | ✅ + dans code block |
+| AC #1 – Import path correct | ✅ | ✅ + dans code block |
+| AC #1 – TrajectoryBuffer.export/.load | ✅ | ✅ + dans code block |
+| AC #1 – BibTeX @software/@misc | ✅ | ✅ + bloc ```bibtex + version |
+| AC #1 – Prerequisites (pip, version, doctor) | ❌ | ✅ |
+| AC #1 – Benchmark JSON ET badge | ⚠️ (OR) | ✅ (AND) |
+| AC #2 – README link | ❌ | ✅ |
+
+## Résultats
+
+```
+27 passed in 0.06s  (tests/integration/test_lab_adoption_guide.py)
+800 passed, 3 skipped  (suite complète — 0 régression)
+```
+
+Baseline précédente (fin Story 5.1) : 783 passés, 2 skipped.
+
+---
+
 # Test Automation Summary — Story 4.4: ComplianceReport Summary and Violations
 
 **Date:** 2026-05-22
