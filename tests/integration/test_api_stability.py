@@ -16,3 +16,109 @@ def test_epic1_api_symbols() -> None:
     expected = {"doctor", "PhysLinkError"}
     actual = set(physlink.__all__)
     assert expected.issubset(actual), f"Missing Epic 1 symbols: {expected - actual}"
+
+
+def test_epic2_api_symbols() -> None:
+    """Story 2.6: ObservationSpace and ActionSpace added to public API."""
+    import physlink
+    from physlink import ObservationSpace, ActionSpace  # noqa: F401 — import test
+
+    expected = {"doctor", "ObservationSpace", "ActionSpace", "PhysLinkError"}
+    actual = set(physlink.__all__)
+    assert expected == actual, (
+        f"Epic 2 API surface mismatch.\n"
+        f"  Got:      {sorted(actual)}\n"
+        f"  Expected: {sorted(expected)}\n"
+        f"  Fix:      update physlink.__all__ in src/physlink/__init__.py"
+    )
+
+
+# DEPRECATION PROTOCOL (NFR-11):
+# When a public symbol or behaviour is deprecated, add a test here that:
+#   1. Calls the deprecated code path
+#   2. Asserts warnings.warn(..., DeprecationWarning) fires via pytest.warns(DeprecationWarning)
+#   3. References the CHANGELOG entry that documents the removal timeline
+# Epic 3 (Story 3.1) will add test_epic3_api_symbols() with DreamerV3Adapter.
+# Epic 4 (Story 4.5) will update to assert the full 7-symbol set.
+
+
+class TestTopLevelNamespaceAccess:
+    """Story 2.6 AC #2: ObservationSpace and ActionSpace accessible via physlink namespace."""
+
+    def test_observation_space_accessible_via_physlink(self) -> None:
+        import physlink
+
+        assert hasattr(physlink, "ObservationSpace")
+
+    def test_action_space_accessible_via_physlink(self) -> None:
+        import physlink
+
+        assert hasattr(physlink, "ActionSpace")
+
+    def test_physlink_error_accessible_via_physlink(self) -> None:
+        import physlink
+
+        assert hasattr(physlink, "PhysLinkError")
+
+    def test_observation_space_is_callable(self) -> None:
+        import physlink
+
+        assert callable(physlink.ObservationSpace)
+
+    def test_action_space_is_callable(self) -> None:
+        import physlink
+
+        assert callable(physlink.ActionSpace)
+
+    def test_observation_space_functional_from_top_level(self) -> None:
+        from physlink import ObservationSpace
+
+        obs = ObservationSpace.from_proprioception(joints=7)
+        assert obs.dims == 7
+
+    def test_action_space_functional_from_top_level(self) -> None:
+        from physlink import ActionSpace
+
+        act = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3)
+        assert act.dims == 3
+
+    def test_observation_space_same_object_as_core_module(self) -> None:
+        from physlink import ObservationSpace
+        from physlink.core.spaces import ObservationSpace as CoreObservationSpace
+
+        assert ObservationSpace is CoreObservationSpace
+
+    def test_action_space_same_object_as_core_module(self) -> None:
+        from physlink import ActionSpace
+        from physlink.core.spaces import ActionSpace as CoreActionSpace
+
+        assert ActionSpace is CoreActionSpace
+
+
+class TestPackageMetadata:
+    """Story 2.6: Package metadata and __all__ ordering contract."""
+
+    def test_version_attribute_exists(self) -> None:
+        import physlink
+
+        assert hasattr(physlink, "__version__")
+
+    def test_version_is_string(self) -> None:
+        import physlink
+
+        assert isinstance(physlink.__version__, str)
+
+    def test_version_is_semver_format(self) -> None:
+        import physlink
+
+        parts = physlink.__version__.split(".")
+        assert len(parts) == 3, f"Expected semver X.Y.Z, got: {physlink.__version__!r}"
+
+    def test_all_is_sorted(self) -> None:
+        import physlink
+
+        assert physlink.__all__ == sorted(physlink.__all__), (
+            f"physlink.__all__ must be isort-sorted.\n"
+            f"  Got:      {physlink.__all__}\n"
+            f"  Expected: {sorted(physlink.__all__)}"
+        )
