@@ -514,10 +514,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-5-run-an-adaptation-loop-preview" class="md-nav__link">
+  <a href="#step-5-run-an-adaptation-loop" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 5 — Run an adaptation loop (preview)
+        Step 5 — Run an adaptation loop
       
     </span>
   </a>
@@ -911,11 +911,11 @@ act_space = ActionSpace.continuous(
 )
 print(act_space.explain())
 </code></pre>
-<h2 id="step-5-run-an-adaptation-loop-preview">Step 5 — Run an adaptation loop (preview)</h2>
+<h2 id="step-5-run-an-adaptation-loop">Step 5 — Run an adaptation loop</h2>
 <blockquote>
-<p><strong>Note:</strong> <code>DreamerV3Adapter</code> is available after <strong>Epic 3</strong>. The code below previews the intended API.</p>
+<p><strong>Note:</strong> <code>DreamerV3Adapter</code> implements a Dreamer-inspired RSSM architecture. It is a prototype adapter, not a wrapper around the original DreamerV3 codebase. See <a href="../PRODUCT_THESIS.md">PRODUCT_THESIS.md</a> for details on what this means for your use case.</p>
 </blockquote>
-<pre><code class="language-python">from physlink.adapters import DreamerV3Adapter  # available after Epic 3
+<pre><code class="language-python">from physlink.adapters import DreamerV3Adapter
 
 adapter = DreamerV3Adapter(
     obs_space=obs_space,
