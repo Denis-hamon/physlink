@@ -1,3 +1,54 @@
+# Test Automation Summary — Story 4.1: AdaptationConfig and AdaptationRun
+
+**Date:** 2026-05-22
+**Framework:** pytest 9.0.3 / Python 3.12.1
+**Story file:** `_bmad-output/implementation-artifacts/4-1-adaptationconfig-and-adaptationrun.md`
+
+## Generated / Updated Tests
+
+### Unit Tests — `tests/unit/core/test_spaces.py` (+23 tests)
+
+- [x] `TestObservationSpaceEquality` (13 tests) — `ObservationSpace.__eq__` / `__hash__` Story 4.1 Task 1
+  - Value equality, identity independence, field discrimination (joints, velocity, clip_bounds, normalize), hash equality, hashable as dict key, not equal to non-ObservationSpace
+- [x] `TestActionSpaceEquality` (10 tests) — `ActionSpace.__eq__` / `__hash__` Story 4.1 Task 1
+  - Value equality, identity independence, field discrimination (dims, bounds, bounds order), hash equality, hashable as dict key, not equal to non-ActionSpace
+
+### Unit Tests — `tests/unit/core/test_types.py` (+20 tests)
+
+- [x] `TestAdaptationConfigImmutability` (+2 tests) — défaut `checkpoint_dir`, FrozenInstanceError sur ce champ
+- [x] `TestAdaptationConfigEquality` (10 tests) — égalité valeur et hashabilité d'`AdaptationConfig`
+  - Égalité valeur, inégalité sur steps / checkpoint_interval_steps / checkpoint_dir / obs_space / act_space, hashable, hash égal, utilisable dans un set
+- [x] `TestAdaptationRunDefaults` (8 tests) — valeurs par défaut et indépendance des instances
+  - `checkpoint_paths` vide par défaut, `elapsed_seconds` = 0.0, mutabilité, indépendance entre instances, timezone UTC
+
+### Unit Tests — `tests/unit/adapters/test_dreamer_cpu.py` (+8 tests)
+
+- [x] `TestFitReturnTypeStory41` (8 tests) — source inspection CPU-safe du changement `fit() -> AdaptationRun`
+  - Annotation `AdaptationRun`, construction `AdaptationRun(`, `AdaptationConfig(`, `_run_checkpoint_paths`, `return _run`, `.append`, `elapsed_seconds`, `TYPE_CHECKING` import
+
+## Coverage
+
+| Fichier | Tests ajoutés | Gaps couverts |
+|---------|--------------|---------------|
+| `test_spaces.py` | +23 | `ObservationSpace.__eq__/__hash__`, `ActionSpace.__eq__/__hash__` |
+| `test_types.py` | +20 | Égalité valeur AdaptationConfig, hash, defaults AdaptationRun |
+| `test_dreamer_cpu.py` | +8 | `fit()` retour AdaptationRun (source inspection) |
+| **Total Story 4.1** | **+51** | |
+
+## Test Run Results
+
+```
+589 passed, 3 skipped, 18 deselected in 4.36s
+```
+
+Zéro régression. Zéro nouveau warning ruff introduit.
+
+## Gaps non couverts (GPU requis)
+
+- Test intégration E2E : `fit()` retourne `AdaptationRun` avec champs corrects (current_step, checkpoint_paths, elapsed_seconds) — nécessite torch GPU, à couvrir dans `test_dreamer_gpu.py`.
+
+---
+
 # Test Automation Summary — Story 3.1: DreamerV3Adapter Construction
 
 **Date:** 2026-05-22

@@ -35,7 +35,7 @@
 # - BLOCKER: Story 6.1 requires README discoverability decision (owner + deadline) before dev start
 
 generated: 2026-05-21
-last_updated: 2026-05-22  # story 1.6 → done; epic-1 → done; epic-1-retrospective → done; epic-2 → in-progress; story 2.1 → done; story 2.2 → done; story 2.3 → done; story 2.4 → done; story 2.5 → done; story 2.6 → done; epic-2-retrospective → done; epic-3 → in-progress; story 3.1 → done; story 3.2 → done; story 3.3 → done; story 3.4 → done; story 3.5 → done; story 3.6 → done
+last_updated: 2026-05-22  # story 1.6 → done; epic-1 → done; epic-1-retrospective → done; epic-2 → in-progress; story 2.1 → done; story 2.2 → done; story 2.3 → done; story 2.4 → done; story 2.5 → done; story 2.6 → done; epic-2-retrospective → done; epic-3 → in-progress; story 3.1 → done; story 3.2 → done; story 3.3 → done; story 3.4 → done; story 3.5 → done; story 3.6 → done; epic-3-retrospective → done; epic-4 → in-progress; story 4.1 → done
 project: PhysLink
 project_key: NOKEY
 tracking_system: file-system
@@ -82,15 +82,15 @@ development_status:
   3-4-safetensors-checkpoint-auto-save-and-recovery: done
   3-5-triptych-gif-visualization: done
   3-6-export-and-share-panel: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
   # ─────────────────────────────────────────────────
   # EPIC 4: Physical Compliance Validation API
   # Goal: Domain scientist attaches invariants + ComplianceReport
   # Requires: Epic 1 + Epic 2 + Epic 3
   # ─────────────────────────────────────────────────
-  epic-4: backlog
-  4-1-adaptationconfig-and-adaptationrun: backlog
+  epic-4: in-progress
+  4-1-adaptationconfig-and-adaptationrun: done
   4-2-trajectorybuffer-export-and-load: backlog
   4-3-register-invariant-api: backlog
   4-4-compliancereport-summary-and-violations: backlog

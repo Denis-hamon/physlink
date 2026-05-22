@@ -126,6 +126,22 @@ class ObservationSpace:
             "normalize": self.normalize,
         }
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ObservationSpace):
+            return NotImplemented
+        return (
+            self.dims == other.dims
+            and self.include_velocity == other.include_velocity
+            and self._joints == other._joints
+            and self.clip_bounds == other.clip_bounds
+            and self.normalize == other.normalize
+        )
+
+    def __hash__(self) -> int:
+        return hash(
+            (self.dims, self.include_velocity, self._joints, self.clip_bounds, self.normalize)
+        )
+
 
 class ActionSpace:
     """Continuous action space with per-dimension bounds and immediate validation.
@@ -250,3 +266,11 @@ class ActionSpace:
             "bounds": [list(b) for b in self.bounds],
             "clipping_behavior": "per_dimension",
         }
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ActionSpace):
+            return NotImplemented
+        return self.dims == other.dims and self.bounds == other.bounds
+
+    def __hash__(self) -> int:
+        return hash((self.dims, tuple(tuple(b) for b in self.bounds)))

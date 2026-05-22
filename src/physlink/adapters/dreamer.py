@@ -2,9 +2,12 @@
 
 import contextlib
 from collections.abc import Generator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from physlink.core._types import TrajectoryBatch
+
+if TYPE_CHECKING:
+    from physlink.core._types import AdaptationRun
 from physlink.core.adapter import BaseAdapter
 from physlink.core.exceptions import ConfigurationError
 from physlink.core.spaces import ActionSpace, ObservationSpace
@@ -548,7 +551,7 @@ class DreamerV3Adapter(BaseAdapter):
         checkpoint_interval_steps: int = 1000,
         debug_hooks: bool = False,
         checkpoint_dir: str = "physlink_checkpoints",
-    ) -> None:
+    ) -> "AdaptationRun":
         """Run the DreamerV3 adaptation loop with a live progress bar.
 
         Adapts the DreamerV3 world model to the provided trajectory data over
@@ -573,6 +576,9 @@ class DreamerV3Adapter(BaseAdapter):
             checkpoint_dir: Directory where checkpoint files are written. Defaults
                 to "physlink_checkpoints" relative to the current working directory.
 
+        Returns:
+            AdaptationRun capturing config, step count, checkpoint paths, and elapsed time.
+
         Raises:
             ValidationError: If steps <= 0 or checkpoint_interval_steps <= 0.
 
@@ -582,10 +588,11 @@ class DreamerV3Adapter(BaseAdapter):
             >>> act = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
             >>> adapter = DreamerV3Adapter(obs, act)
             >>> trajectories = [{"obs": [0.1] * 7, "action": [0.0] * 7}] * 100
-            >>> adapter.fit(trajectories, steps=10, debug_hooks=True)
+            >>> run = adapter.fit(trajectories, steps=10, debug_hooks=True)
         """
         import time
 
+        from physlink.core._types import AdaptationConfig, AdaptationRun
         from physlink.core.exceptions import ValidationError
 
         if isinstance(steps, bool) or not isinstance(steps, int) or steps <= 0:
@@ -651,6 +658,7 @@ class DreamerV3Adapter(BaseAdapter):
         scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
 
         _fit_start_time = time.monotonic()
+        _run_checkpoint_paths: list[str] = []
 
         if debug_hooks:
             debug_panel = _DebugPanel()
@@ -676,10 +684,12 @@ class DreamerV3Adapter(BaseAdapter):
                     )
                     completed = step_idx + 1
                     if completed % checkpoint_interval_steps == 0:
-                        self._last_checkpoint_path = _save_checkpoint(
+                        _ckpt = _save_checkpoint(
                             self._model, self._actor, self._critic,
                             completed, checkpoint_dir,
                         )
+                        self._last_checkpoint_path = _ckpt
+                        _run_checkpoint_paths.append(_ckpt)
         else:
             with _build_progress_bar(steps) as (progress, task_id):
                 for step_idx in range(steps):
@@ -695,12 +705,29 @@ class DreamerV3Adapter(BaseAdapter):
                     )
                     completed = step_idx + 1
                     if completed % checkpoint_interval_steps == 0:
-                        self._last_checkpoint_path = _save_checkpoint(
+                        _ckpt = _save_checkpoint(
                             self._model, self._actor, self._critic,
                             completed, checkpoint_dir,
                         )
+                        self._last_checkpoint_path = _ckpt
+                        _run_checkpoint_paths.append(_ckpt)
 
         self._fit_elapsed_seconds = time.monotonic() - _fit_start_time
+
+        _config = AdaptationConfig(
+            obs_space=self.obs_space,
+            act_space=self.act_space,
+            steps=steps,
+            checkpoint_interval_steps=checkpoint_interval_steps,
+            checkpoint_dir=checkpoint_dir,
+        )
+        _run = AdaptationRun(
+            config=_config,
+            current_step=completed,
+            checkpoint_paths=_run_checkpoint_paths,
+            elapsed_seconds=self._fit_elapsed_seconds or 0.0,
+        )
+        return _run
 
     def explain(self) -> dict[str, Any]:
         """Return a metadata dict describing this adapter's space configuration.

@@ -528,3 +528,124 @@ class TestActionSpaceExplainGaps:
     def test_explain_clipping_behavior_is_string(self) -> None:
         result = ActionSpace.continuous(dims=2, bounds=[(-1.0, 1.0)] * 2).explain()
         assert isinstance(result["clipping_behavior"], str)
+
+
+class TestObservationSpaceEquality:
+    """Story 4.1 Task 1: __eq__ and __hash__ on ObservationSpace for AdaptationConfig equality."""
+
+    def test_equal_instances_are_equal(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
+        b = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
+        assert a == b
+
+    def test_different_joints_not_equal(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7)
+        b = ObservationSpace.from_proprioception(joints=5)
+        assert a != b
+
+    def test_different_velocity_not_equal(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
+        b = ObservationSpace.from_proprioception(joints=7, include_velocity=False)
+        assert a != b
+
+    def test_different_clip_bounds_not_equal(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7, clip_bounds=(-1.0, 1.0))
+        b = ObservationSpace.from_proprioception(joints=7)
+        assert a != b
+
+    def test_different_normalize_not_equal(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7, normalize=True)
+        b = ObservationSpace.from_proprioception(joints=7, normalize=False)
+        assert a != b
+
+    def test_equal_instances_have_equal_hash(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
+        b = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
+        assert hash(a) == hash(b)
+
+    def test_hashable_as_dict_key(self) -> None:
+        obs = ObservationSpace.from_proprioception(joints=7)
+        d = {obs: "label"}
+        assert d[obs] == "label"
+
+    def test_not_equal_to_non_observation_space(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7)
+        assert a != "not an ObservationSpace"
+
+    def test_not_equal_to_none(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7)
+        assert a != None  # noqa: E711
+
+    def test_equality_is_value_based_not_identity(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7)
+        b = ObservationSpace.from_proprioception(joints=7)
+        assert a is not b
+        assert a == b
+
+    def test_equal_with_clip_bounds_set(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=4, clip_bounds=(-2.0, 2.0))
+        b = ObservationSpace.from_proprioception(joints=4, clip_bounds=(-2.0, 2.0))
+        assert a == b
+
+    def test_equal_with_normalize_true(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=3, normalize=True)
+        b = ObservationSpace.from_proprioception(joints=3, normalize=True)
+        assert a == b
+
+    def test_different_dims_due_to_velocity_not_equal(self) -> None:
+        a = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
+        b = ObservationSpace.from_proprioception(joints=14, include_velocity=False)
+        assert a != b
+
+
+class TestActionSpaceEquality:
+    """Story 4.1 Task 1: __eq__ and __hash__ on ActionSpace for AdaptationConfig equality."""
+
+    def test_equal_instances_are_equal(self) -> None:
+        a = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        b = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        assert a == b
+
+    def test_different_dims_not_equal(self) -> None:
+        a = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        b = ActionSpace.continuous(dims=5, bounds=[(-1.0, 1.0)] * 5)
+        assert a != b
+
+    def test_different_bounds_not_equal(self) -> None:
+        a = ActionSpace.continuous(dims=2, bounds=[(-1.0, 1.0), (-2.0, 2.0)])
+        b = ActionSpace.continuous(dims=2, bounds=[(-1.0, 1.0), (-1.0, 1.0)])
+        assert a != b
+
+    def test_equal_instances_have_equal_hash(self) -> None:
+        a = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        b = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        assert hash(a) == hash(b)
+
+    def test_hashable_as_dict_key(self) -> None:
+        act = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        d = {act: "label"}
+        assert d[act] == "label"
+
+    def test_not_equal_to_non_action_space(self) -> None:
+        a = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        assert a != "not an ActionSpace"
+
+    def test_not_equal_to_none(self) -> None:
+        a = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        assert a != None  # noqa: E711
+
+    def test_equality_is_value_based_not_identity(self) -> None:
+        a = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3)
+        b = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3)
+        assert a is not b
+        assert a == b
+
+    def test_equal_asymmetric_bounds(self) -> None:
+        a = ActionSpace.continuous(dims=2, bounds=[(-2.0, 2.0), (0.0, 1.0)])
+        b = ActionSpace.continuous(dims=2, bounds=[(-2.0, 2.0), (0.0, 1.0)])
+        assert a == b
+
+    def test_different_bounds_order_not_equal(self) -> None:
+        a = ActionSpace.continuous(dims=2, bounds=[(-1.0, 1.0), (-2.0, 2.0)])
+        b = ActionSpace.continuous(dims=2, bounds=[(-2.0, 2.0), (-1.0, 1.0)])
+        assert a != b

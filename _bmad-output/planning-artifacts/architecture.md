@@ -165,7 +165,9 @@ communauté mesurable et indépendant du budget.
 def fit(
     trajectories: Union[list[dict], TrajectoryBatch],
     steps: int,
-    checkpoint_interval_steps: int,
+    checkpoint_interval_steps: int = 1000,
+    debug_hooks: bool = False,
+    checkpoint_dir: str = "physlink_checkpoints",
 ) -> AdaptationRun: ...
 ```
 
@@ -426,6 +428,8 @@ def fit(
     trajectories: list[dict] | TrajectoryBatch,
     steps: int,
     checkpoint_interval_steps: int = 1000,
+    debug_hooks: bool = False,
+    checkpoint_dir: str = "physlink_checkpoints",
 ) -> AdaptationRun: ...
 
 # ❌ Interdit

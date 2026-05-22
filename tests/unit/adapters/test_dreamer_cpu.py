@@ -1319,3 +1319,44 @@ class TestDreamerV3AdapterExport:
         assert "obs_dims" in content
         assert "act_dims" in content
         assert "Exported at" in content
+
+
+class TestFitReturnTypeStory41:
+    """Story 4.1: fit() return type changed None -> AdaptationRun — CPU-safe source inspection."""
+
+    def _fit_source(self) -> str:
+        import inspect
+
+        from physlink.adapters.dreamer import DreamerV3Adapter
+
+        return inspect.getsource(DreamerV3Adapter.fit)
+
+    def test_fit_return_annotation_references_adaptation_run(self) -> None:
+        assert "AdaptationRun" in self._fit_source()
+
+    def test_fit_source_constructs_adaptation_run_instance(self) -> None:
+        assert "AdaptationRun(" in self._fit_source()
+
+    def test_fit_source_constructs_adaptation_config_instance(self) -> None:
+        assert "AdaptationConfig(" in self._fit_source()
+
+    def test_fit_source_collects_checkpoint_paths_list(self) -> None:
+        assert "_run_checkpoint_paths" in self._fit_source()
+
+    def test_fit_source_returns_run_variable(self) -> None:
+        assert "return _run" in self._fit_source()
+
+    def test_fit_source_appends_to_checkpoint_paths(self) -> None:
+        assert "_run_checkpoint_paths.append" in self._fit_source()
+
+    def test_fit_source_sets_elapsed_seconds_on_run(self) -> None:
+        assert "elapsed_seconds" in self._fit_source()
+
+    def test_fit_type_checking_import_for_annotation(self) -> None:
+        import inspect
+
+        from physlink.adapters import dreamer as dreamer_module
+
+        source = inspect.getsource(dreamer_module)
+        assert "TYPE_CHECKING" in source
+        assert "AdaptationRun" in source
