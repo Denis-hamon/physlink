@@ -1,4 +1,4 @@
-"""Unit tests for physlink.core.spaces.ObservationSpace."""
+"""Unit tests for physlink.core.spaces — ObservationSpace and ActionSpace."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import inspect
 import pytest
 
 from physlink.core.exceptions import ValidationError
-from physlink.core.spaces import ObservationSpace
+from physlink.core.spaces import ActionSpace, ObservationSpace
 
 
 class TestObservationSpaceFromProprioception:
@@ -136,3 +136,209 @@ class TestObservationSpaceInterface:
 class TestObservationSpaceNoTorch:
     def test_no_torch_in_from_proprioception_signature(self) -> None:
         assert "torch" not in str(inspect.signature(ObservationSpace.from_proprioception))
+
+
+class TestActionSpaceContinuous:
+    def test_valid_construction_7dof(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        assert isinstance(result, ActionSpace)
+
+    def test_stores_dims(self) -> None:
+        assert ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7).dims == 7
+
+    def test_stores_bounds(self) -> None:
+        assert ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3).bounds == [(-1.0, 1.0)] * 3
+
+    def test_asymmetric_bounds(self) -> None:
+        result = ActionSpace.continuous(dims=2, bounds=[(-2.0, 2.0), (0.0, 1.0)])
+        assert isinstance(result, ActionSpace)
+
+    def test_single_dim(self) -> None:
+        result = ActionSpace.continuous(dims=1, bounds=[(0.0, 1.0)])
+        assert isinstance(result, ActionSpace)
+
+    def test_equal_min_max_bounds(self) -> None:
+        result = ActionSpace.continuous(dims=1, bounds=[(0.5, 0.5)])
+        assert isinstance(result, ActionSpace)
+
+    def test_negative_bounds(self) -> None:
+        result = ActionSpace.continuous(dims=2, bounds=[(-5.0, -1.0), (-3.0, 0.0)])
+        assert isinstance(result, ActionSpace)
+
+
+class TestActionSpaceValidation:
+    def test_bounds_length_mismatch_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 3)
+
+    def test_bounds_length_mismatch_message_got(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 3)
+        assert "3 bounds" in str(exc_info.value)
+
+    def test_bounds_length_mismatch_message_expected(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 3)
+        assert "7 bounds" in str(exc_info.value)
+
+    def test_bounds_length_mismatch_message_fix(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 3)
+        assert "Fix" in str(exc_info.value)
+
+    def test_zero_dims_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=0, bounds=[])
+
+    def test_negative_dims_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=-1, bounds=[])
+
+    def test_string_dims_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims="seven", bounds=[(-1.0, 1.0)] * 7)  # type: ignore[arg-type]
+
+    def test_float_dims_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=7.0, bounds=[(-1.0, 1.0)] * 7)  # type: ignore[arg-type]
+
+    def test_bool_dims_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=True, bounds=[(-1.0, 1.0)])
+
+    def test_false_bool_dims_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=False, bounds=[])
+
+    def test_none_dims_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=None, bounds=[(-1.0, 1.0)])  # type: ignore[arg-type]
+
+    def test_non_list_bounds_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=7, bounds=((-1.0, 1.0),) * 7)  # type: ignore[arg-type]
+
+    def test_inverted_bound_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=1, bounds=[(1.0, -1.0)])
+
+    def test_inverted_bound_error_message_contains_fix(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims=1, bounds=[(1.0, -1.0)])
+        assert "Fix" in str(exc_info.value)
+
+    def test_dims_error_message_got_expected_fix(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims=0, bounds=[])
+        msg = str(exc_info.value)
+        assert "Got" in msg
+        assert "Expected" in msg
+        assert "Fix" in msg
+
+    def test_string_dims_error_message_contains_type(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims="seven", bounds=[])  # type: ignore[arg-type]
+        assert "str" in str(exc_info.value)
+
+
+class TestActionSpaceInterface:
+    def test_repr_contains_dims(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        assert "dims=7" in repr(result)
+
+    def test_idempotent_construction(self) -> None:
+        a = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3)
+        b = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3)
+        assert a.dims == b.dims
+        assert a.bounds == b.bounds
+
+
+class TestActionSpaceNoTorch:
+    def test_no_torch_in_continuous_signature(self) -> None:
+        assert "torch" not in str(inspect.signature(ActionSpace.continuous))
+
+
+class TestActionSpaceGaps:
+    """Gap tests discovered by QA audit — AC coverage, edge cases, and contract invariants."""
+
+    # --- bound sub-element size ---
+
+    def test_bound_single_element_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=1, bounds=[(1.0,)])  # type: ignore[arg-type]
+
+    def test_bound_three_elements_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=1, bounds=[(1.0, 2.0, 3.0)])  # type: ignore[arg-type]
+
+    def test_non_sequence_bound_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=1, bounds=[42])  # type: ignore[arg-type]
+
+    # --- mismatch direction: more bounds than dims ---
+
+    def test_bounds_length_excess_raises_validation_error(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 7)
+
+    def test_bounds_length_excess_message_got(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 7)
+        assert "7 bounds" in str(exc_info.value)
+
+    def test_bounds_length_excess_message_expected(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 7)
+        assert "3 bounds" in str(exc_info.value)
+
+    # --- inverted bound error message completeness ---
+
+    def test_inverted_bound_error_message_got(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims=1, bounds=[(1.0, -1.0)])
+        assert "Got" in str(exc_info.value)
+
+    def test_inverted_bound_error_message_expected(self) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            ActionSpace.continuous(dims=1, bounds=[(1.0, -1.0)])
+        assert "Expected" in str(exc_info.value)
+
+    def test_inverted_bound_at_non_zero_index(self) -> None:
+        with pytest.raises(ValidationError):
+            ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0), (-1.0, 1.0), (1.0, -1.0)])
+
+    # --- object independence (NFR-09 idempotency) ---
+
+    def test_idempotent_construction_returns_independent_objects(self) -> None:
+        a = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3)
+        b = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3)
+        assert a is not b
+
+    # --- repr exact format ---
+
+    def test_repr_exact_format(self) -> None:
+        result = ActionSpace.continuous(dims=5, bounds=[(-1.0, 1.0)] * 5)
+        assert repr(result) == "ActionSpace(dims=5)"
+
+    def test_repr_starts_with_class_name(self) -> None:
+        result = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+        assert repr(result).startswith("ActionSpace(")
+
+    # --- scale test ---
+
+    def test_large_dims_100dof(self) -> None:
+        result = ActionSpace.continuous(dims=100, bounds=[(-1.0, 1.0)] * 100)
+        assert result.dims == 100
+        assert len(result.bounds) == 100
+
+    # --- attribute type guarantee ---
+
+    def test_bounds_attribute_is_list(self) -> None:
+        result = ActionSpace.continuous(dims=3, bounds=[(-1.0, 1.0)] * 3)
+        assert isinstance(result.bounds, list)
+
+    # --- mixed int/float bounds ---
+
+    def test_mixed_int_float_bounds_succeed(self) -> None:
+        result = ActionSpace.continuous(dims=1, bounds=[(0, 1.0)])  # type: ignore[list-item]
+        assert isinstance(result, ActionSpace)
