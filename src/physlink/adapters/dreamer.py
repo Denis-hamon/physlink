@@ -231,6 +231,45 @@ def _check_checkpoint_metadata(path: str) -> dict[str, str]:
     return metadata
 
 
+def _share_panel(export_path: str) -> None:
+    """Trigger the Colab share panel: copy notebook URL to clipboard.
+
+    In Google Colab, copies the current notebook URL to the clipboard via
+    Javascript. Outside Colab, prints a graceful fallback message.
+
+    Args:
+        export_path: Absolute path to the export directory. Shown in fallback
+            message so collaborators know where to find the artifacts.
+
+    Example:
+        >>> _share_panel("./physlink_export")
+        [physlink] Share panel: URL copy is only available in Google Colab.
+        ...
+    """
+    try:
+        import google.colab  # noqa: F401
+        in_colab = True
+    except ImportError:
+        in_colab = False
+
+    try:
+        if in_colab:
+            from IPython.display import Javascript, display
+            display(Javascript(
+                "navigator.clipboard.writeText(window.location.href)"
+                ".then(() => console.log('[physlink] Notebook URL copied.'));"
+            ))
+            print("[physlink] Share panel: notebook URL copied to clipboard.")
+            print(f"[physlink] Export path for collaborators: {export_path}")
+        else:
+            print(
+                "[physlink] Share panel: URL copy is only available in Google Colab.\n"
+                f"           To share your results, send the export directory: {export_path}"
+            )
+    except Exception as exc:
+        print(f"[physlink] Share panel unavailable: {type(exc).__name__}")
+
+
 class DreamerV3Adapter(BaseAdapter):
     """DreamerV3 adapter for physical simulation reinforcement learning.
 
@@ -278,6 +317,7 @@ class DreamerV3Adapter(BaseAdapter):
         self._baseline_loss: float | None = None
         self._fit_elapsed_seconds: float | None = None
         self._triptych_path: str | None = None
+        self._last_checkpoint_path: str | None = None
 
     def _initialize_model(self, device: Any) -> None:  # noqa: ANN401
         import torch.nn as nn
@@ -636,7 +676,7 @@ class DreamerV3Adapter(BaseAdapter):
                     )
                     completed = step_idx + 1
                     if completed % checkpoint_interval_steps == 0:
-                        _save_checkpoint(
+                        self._last_checkpoint_path = _save_checkpoint(
                             self._model, self._actor, self._critic,
                             completed, checkpoint_dir,
                         )
@@ -655,7 +695,7 @@ class DreamerV3Adapter(BaseAdapter):
                     )
                     completed = step_idx + 1
                     if completed % checkpoint_interval_steps == 0:
-                        _save_checkpoint(
+                        self._last_checkpoint_path = _save_checkpoint(
                             self._model, self._actor, self._critic,
                             completed, checkpoint_dir,
                         )
@@ -782,16 +822,96 @@ class DreamerV3Adapter(BaseAdapter):
 
         return gif_path
 
-    def export(self, path: str) -> None:
-        """Export artifact bundle. Implemented in Story 3.6.
+    def export(self, path: str) -> dict[str, str]:
+        """Export a complete artifact bundle to the specified directory.
+
+        Copies the triptych GIF, writes a YAML configuration file, and writes
+        a human-readable summary. Calls the share panel to copy the Colab
+        notebook URL to the clipboard (Colab only; graceful fallback elsewhere).
 
         Args:
-            path: Directory path for the exported artifacts.
+            path: Directory path for the exported artifacts. Created if it does
+                not exist. Existing files in the directory are overwritten.
+
+        Returns:
+            dict with keys ``gif``, ``config``, ``summary`` mapping to the
+            absolute paths of the respective exported files.
 
         Raises:
-            NotImplementedError: Always — implemented in Story 3.6.
+            AdapterError: If ``visualize()`` has not been called (no triptych
+                available to export).
+
+        Example:
+            >>> adapter.fit(trajectories, steps=1000)
+            >>> adapter.visualize(trajectories)
+            >>> artifacts = adapter.export("./physlink_export")
+            >>> artifacts["config"]  # absolute path to config.yaml
+            '/abs/path/physlink_export/config.yaml'
         """
-        raise NotImplementedError("export() is implemented in Story 3.6.")
+        import datetime
+        import os
+        import shutil
+
+        import yaml
+
+        from physlink.core.exceptions import AdapterError
+
+        if self._triptych_path is None:
+            raise AdapterError(
+                "DreamerV3Adapter.export: no triptych available.\n"
+                "  Got:      self._triptych_path is None\n"
+                "  Expected: visualize() called before export()\n"
+                "  Fix:      call adapter.visualize(trajectories) before adapter.export(path)."
+            )
+
+        os.makedirs(path, exist_ok=True)
+
+        gif_dest = os.path.join(path, "triptych.gif")
+        shutil.copy2(self._triptych_path, gif_dest)
+
+        config = {
+            "obs_space": self.obs_space.explain(),
+            "act_space": self.act_space.explain(),
+            "checkpoint_path": self._last_checkpoint_path,
+        }
+        yaml_path = os.path.join(path, "config.yaml")
+        with open(yaml_path, "w", encoding="utf-8") as f:
+            yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
+
+        elapsed_min = (
+            self._fit_elapsed_seconds / 60.0
+            if self._fit_elapsed_seconds is not None
+            else None
+        )
+        elapsed_str = f"{elapsed_min:.1f} min" if elapsed_min is not None else "N/A"
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        summary_lines = [
+            "physlink Export Summary",
+            "=======================",
+            "Adapter:          DreamerV3Adapter",
+            f"obs_dims:         {self.obs_space.dims}",
+            f"act_dims:         {self.act_space.dims}",
+            f"Fit elapsed:      {elapsed_str}",
+            f"Triptych GIF:     {os.path.abspath(self._triptych_path)}",
+            f"Checkpoint:       {self._last_checkpoint_path or 'N/A'}",
+            f"Exported at:      {timestamp}",
+        ]
+        summary_path = os.path.join(path, "summary.txt")
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(summary_lines) + "\n")
+
+        print(f"[physlink] Export complete: {os.path.abspath(path)}")
+        print(f"[physlink]   GIF:     {os.path.abspath(gif_dest)}")
+        print(f"[physlink]   Config:  {os.path.abspath(yaml_path)}")
+        print(f"[physlink]   Summary: {os.path.abspath(summary_path)}")
+
+        _share_panel(os.path.abspath(path))
+
+        return {
+            "gif": os.path.abspath(gif_dest),
+            "config": os.path.abspath(yaml_path),
+            "summary": os.path.abspath(summary_path),
+        }
 
     def __repr__(self) -> str:
         return (

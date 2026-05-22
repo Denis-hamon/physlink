@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -239,7 +240,7 @@ class TestDreamerV3AdapterExplain:
 
 
 class TestDreamerV3AdapterStubs:
-    """visualize(), export() must raise NotImplementedError (stubs)."""
+    """visualize() raises AdapterError (no model); export() raises AdapterError when visualize() was not called."""
 
     def test_visualize_raises_not_implemented_error(self) -> None:
         from physlink import DreamerV3Adapter
@@ -265,24 +266,29 @@ class TestDreamerV3AdapterStubs:
         assert "Expected:" in msg
         assert "Fix:" in msg
 
-    def test_export_raises_not_implemented_error(self) -> None:
+    def test_export_raises_adapter_error_without_visualize(self) -> None:
         from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import AdapterError
 
         obs = _make_valid_obs(joints=7)
         act = _make_valid_act(dims=7)
         adapter = DreamerV3Adapter(obs, act)
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(AdapterError):
             adapter.export("/tmp/test_export")
 
-    def test_export_error_message_references_story_36(self) -> None:
+    def test_export_error_message_contains_got_expected_fix(self) -> None:
         from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import AdapterError
 
         obs = _make_valid_obs(joints=7)
         act = _make_valid_act(dims=7)
         adapter = DreamerV3Adapter(obs, act)
-        with pytest.raises(NotImplementedError) as exc_info:
+        with pytest.raises(AdapterError) as exc_info:
             adapter.export("/tmp/test_export")
-        assert "3.6" in str(exc_info.value)
+        msg = str(exc_info.value)
+        assert "Got:" in msg
+        assert "Expected:" in msg
+        assert "Fix:" in msg
 
 
 class TestDreamerV3AdapterRepr:
@@ -1031,6 +1037,22 @@ class TestDreamerV3AdapterStory35State:
             "FR-04 requires triptych and compliance are never coupled"
         )
 
+    def test_last_checkpoint_path_is_none_before_fit(self) -> None:
+        """_last_checkpoint_path must be None until fit() captures the first checkpoint path."""
+        adapter = self._make_adapter()
+        assert adapter._last_checkpoint_path is None
+
+    def test_reset_training_state_does_not_clear_last_checkpoint_path(self) -> None:
+        """_last_checkpoint_path must survive _reset_training_state() (Story 3.6 spec).
+
+        export() always needs the most recent checkpoint path even when fit() is
+        called multiple times, each of which invokes _reset_training_state().
+        """
+        adapter = self._make_adapter()
+        adapter._last_checkpoint_path = "/fake/checkpoint_step_10000.safetensors"
+        adapter._reset_training_state()
+        assert adapter._last_checkpoint_path == "/fake/checkpoint_step_10000.safetensors"
+
 
 class TestVisualizeFridayCallout:
     """AC #1: Friday afternoon window callout logic verified via source inspection — CPU-safe."""
@@ -1127,3 +1149,173 @@ class TestCheckCheckpointMetadata:
         assert "Got:" in msg
         assert "Expected:" in msg
         assert "Fix:" in msg
+
+
+# ---------------------------------------------------------------------------
+# Fixture: adapter with _triptych_path set to a stub GIF file
+# ---------------------------------------------------------------------------
+
+_STUB_GIF = b"GIF89a\x01\x00\x01\x00\x00\xff\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"
+
+
+@pytest.fixture
+def _adapter_with_triptych(tmp_path: Path) -> "DreamerV3Adapter":  # type: ignore[type-arg]
+    from physlink import DreamerV3Adapter
+
+    obs = ObservationSpace.from_proprioception(joints=7, include_velocity=True)
+    act = ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
+    adapter = DreamerV3Adapter(obs, act)
+    stub_gif = tmp_path / "stub.gif"
+    stub_gif.write_bytes(_STUB_GIF)
+    adapter._triptych_path = str(stub_gif)
+    return adapter
+
+
+class TestDreamerV3AdapterExport:
+    """AC: all — export() artifact bundle and _share_panel() (CPU only, no GPU)."""
+
+    def test_export_creates_output_directory(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        assert (tmp_path / "out").is_dir()
+
+    def test_export_creates_gif_file(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        assert (tmp_path / "out" / "triptych.gif").is_file()
+
+    def test_export_creates_yaml_config(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        import yaml
+
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        yaml_path = tmp_path / "out" / "config.yaml"
+        assert yaml_path.is_file()
+        loaded = yaml.safe_load(yaml_path.read_text())
+        assert isinstance(loaded, dict)
+
+    def test_export_yaml_contains_required_keys(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        import yaml
+
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        yaml_path = tmp_path / "out" / "config.yaml"
+        loaded = yaml.safe_load(yaml_path.read_text())
+        assert "obs_space" in loaded
+        assert "act_space" in loaded
+        assert "checkpoint_path" in loaded
+
+    def test_export_creates_summary_file(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        summary_path = tmp_path / "out" / "summary.txt"
+        assert summary_path.is_file()
+        assert summary_path.stat().st_size > 0
+
+    def test_export_returns_artifact_paths_dict(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        export_dir = str(tmp_path / "out")
+        result = _adapter_with_triptych.export(export_dir)
+        assert isinstance(result, dict)
+        assert "gif" in result
+        assert "config" in result
+        assert "summary" in result
+
+    def test_export_raises_adapter_error_without_triptych(self) -> None:
+        from physlink import DreamerV3Adapter
+        from physlink.core.exceptions import AdapterError
+
+        obs = _make_valid_obs(joints=7)
+        act = _make_valid_act(dims=7)
+        adapter = DreamerV3Adapter(obs, act)
+        with pytest.raises(AdapterError):
+            adapter.export("/tmp/physlink_test_no_triptych")
+
+    def test_export_checkpoint_path_null_in_yaml_when_no_checkpoint(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        import yaml
+
+        _adapter_with_triptych._last_checkpoint_path = None
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        yaml_path = tmp_path / "out" / "config.yaml"
+        loaded = yaml.safe_load(yaml_path.read_text())
+        assert loaded["checkpoint_path"] is None
+
+    def test_export_idempotent(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        _adapter_with_triptych.export(export_dir)
+        assert (tmp_path / "out" / "triptych.gif").is_file()
+
+    def test_share_panel_outside_colab_prints_message(self, capsys: pytest.CaptureFixture) -> None:
+        from physlink.adapters.dreamer import _share_panel
+
+        _share_panel("./export_test")
+        captured = capsys.readouterr()
+        assert "Share panel" in captured.out
+        assert "export_test" in captured.out
+
+    def test_export_returned_paths_all_exist(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        """AC #1: returned dict paths must all point to files that exist on disk."""
+        export_dir = str(tmp_path / "out")
+        result = _adapter_with_triptych.export(export_dir)
+        assert Path(result["gif"]).is_file()
+        assert Path(result["config"]).is_file()
+        assert Path(result["summary"]).is_file()
+
+    def test_export_yaml_obs_space_is_json_serializable_dict(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        """AC #2: obs_space in YAML must be a JSON-serializable dict, not a raw Python object."""
+        import json
+
+        import yaml
+
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        loaded = yaml.safe_load((tmp_path / "out" / "config.yaml").read_text())
+        assert isinstance(loaded["obs_space"], dict)
+        json.dumps(loaded["obs_space"])  # raises TypeError if not serializable
+
+    def test_export_yaml_act_space_is_json_serializable_dict(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        """AC #2: act_space in YAML must be a JSON-serializable dict, not a raw Python object."""
+        import json
+
+        import yaml
+
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        loaded = yaml.safe_load((tmp_path / "out" / "config.yaml").read_text())
+        assert isinstance(loaded["act_space"], dict)
+        json.dumps(loaded["act_space"])  # raises TypeError if not serializable
+
+    def test_export_summary_contains_expected_fields(
+        self, _adapter_with_triptych: object, tmp_path: Path
+    ) -> None:
+        """Summary.txt must contain adapter type, obs_dims, act_dims, and export timestamp."""
+        export_dir = str(tmp_path / "out")
+        _adapter_with_triptych.export(export_dir)
+        content = (tmp_path / "out" / "summary.txt").read_text()
+        assert "DreamerV3Adapter" in content
+        assert "obs_dims" in content
+        assert "act_dims" in content
+        assert "Exported at" in content
