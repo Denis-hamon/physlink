@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-23T10:09:37.920447+00:00",
+  "data_source": "data/reference_trajectory.jsonl",
+  "summary": {
+    "total_steps": 500,
+    "episodes": 10,
+    "mean_episode_length": 50.0,
+    "obs_dims": 14,
+    "act_dims": 7,
+    "seed": 42
+  },
+  "checks": [
+    {
+      "name": "schema_conformance",
+      "status": "PASS",
+      "details": "500/500 trajectories have required keys",
+      "count_checked": 500,
+      "count_failed": 0
+    },
+    {
+      "name": "obs_dimension_consistency",
+      "status": "PASS",
+      "details": "All obs vectors are 14-dimensional",
+      "count_checked": 500,
+      "count_failed": 0
+    },
+    {
+      "name": "act_dimension_consistency",
+      "status": "PASS",
+      "details": "All action vectors are 7-dimensional",
+      "count_checked": 500,
+      "count_failed": 0
+    },
+    {
+      "name": "action_range",
+      "status": "PASS",
+      "details": "All 3500 action values in [-1.0, 1.0]",
+      "count_checked": 3500,
+      "count_failed": 0
+    },
+    {
+      "name": "obs_finite",
+      "status": "PASS",
+      "details": "No NaN or Inf in 7000 obs values",
+      "count_checked": 7000,
+      "count_failed": 0
+    },
+    {
+      "name": "episode_termination",
+      "status": "PASS",
+      "details": "10/10 episodes terminate with done=True",
+      "count_checked": 10,
+      "count_failed": 0
+    }
+  ],
+  "overall": "PASS"
+}

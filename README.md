@@ -5,7 +5,6 @@
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://Denis-hamon.github.io/physlink/)
 [![PyPI](https://img.shields.io/pypi/v/physlink.svg)](https://pypi.org/project/physlink/)
 [![Python](https://img.shields.io/pypi/pyversions/physlink.svg)](https://pypi.org/project/physlink/)
-[![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-b31b1b.svg)](https://arxiv.org/abs/PLACEHOLDER)
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb)
 
@@ -28,6 +27,20 @@ Plug your robot trajectories into a Dreamer-inspired world model adapter without
 > **Note:** `DreamerV3Adapter` implements a Dreamer-like RSSM architecture (encoder → GRU → prior/posterior → actor/critic) and is architecturally inspired by [DreamerV3](https://github.com/danijar/dreamerv3). It is a prototype, not a wrapper around the original DreamerV3 codebase.
 
 Read the [product thesis behind PhysLink](PRODUCT_THESIS.md): why world-model tooling needs explicit interfaces for data, actions, domain constraints, evaluation, and trust.
+
+## For Technical Reviewers
+
+Start here if you want a fast, structured read:
+
+1. **[PRODUCT_THESIS.md](PRODUCT_THESIS.md)** — why this exists and what problem it solves
+2. **[EXPERIMENT_CARD.md](EXPERIMENT_CARD.md)** — what the reference experiment claims, what it doesn't, and its known limitations
+3. **[BACKEND_BOUNDARY.md](BACKEND_BOUNDARY.md)** — exactly what PhysLink owns vs what the neural backend owns (important for avoiding the "DreamerV3 wrapper" misread)
+4. **[docs/lab-adoption-guide.md](docs/lab-adoption-guide.md)** — trajectory quality gate and compliance framework in context
+5. **[tests/](tests/)** — unit tests for spaces, types, invariant registration, and compliance reporting
+
+The reference trajectory dataset at `examples/data/reference_trajectory.jsonl` is fully reproducible: `python3 examples/check_trajectory_quality.py` regenerates it from seed=42 and re-runs the quality gate.
+
+---
 
 ## Why PhysLink
 
