@@ -29,6 +29,20 @@ Plug your robot trajectories into a Dreamer-inspired world model adapter without
 
 Read the [product thesis behind PhysLink](PRODUCT_THESIS.md): why world-model tooling needs explicit interfaces for data, actions, domain constraints, evaluation, and trust.
 
+## For Technical Reviewers
+
+Start here if you want a fast, structured read:
+
+1. **[PRODUCT_THESIS.md](PRODUCT_THESIS.md)** — why this exists and what problem it solves
+2. **[EXPERIMENT_CARD.md](EXPERIMENT_CARD.md)** — what the reference experiment claims, what it doesn't, and its known limitations
+3. **[BACKEND_BOUNDARY.md](BACKEND_BOUNDARY.md)** — exactly what PhysLink owns vs what the neural backend owns (important for avoiding the "DreamerV3 wrapper" misread)
+4. **[docs/lab-adoption-guide.md](docs/lab-adoption-guide.md)** — trajectory quality gate and compliance framework in context
+5. **[tests/](tests/)** — unit tests for spaces, types, invariant registration, and compliance reporting
+
+The reference trajectory dataset at `examples/data/reference_trajectory.jsonl` is fully reproducible: `python3 examples/check_trajectory_quality.py` regenerates it from seed=42 and re-runs the quality gate.
+
+---
+
 ## Why PhysLink
 
 | Without PhysLink | With PhysLink |
