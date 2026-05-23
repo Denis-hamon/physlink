@@ -437,7 +437,7 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
           <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
         </svg>
       </div>
-      <span class="stat-k">Backend</span><span class="stat-v">DreamerV3</span>
+      <span class="stat-k">Backend</span><span class="stat-v">Dreamer-RSSM</span>
     </div>
     <!-- colab -->
     <div class="stat">
@@ -653,9 +653,9 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
 <section id="features">
   <div class="wrap">
     <div class="sec-hd reveal">
-      <div class="sec-label">Five primitives</div>
+      <div class="sec-label">Six primitives</div>
       <h2>Everything you need.<br>Nothing you don't.</h2>
-      <p class="sec-desc">Five focused APIs that eliminate every friction point between your physics data and a validated world model.</p>
+      <p class="sec-desc">Six focused APIs that eliminate every friction point between your physics data and a validated world model.</p>
     </div>
     <div class="feat-grid reveal">
 
@@ -671,7 +671,7 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
                 CUDA 12.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-ok">✓ OK</span>&nbsp; | &nbsp;VRAM 14.8 GB &nbsp;&nbsp;<span class="t-ok">✓ OK</span><br>
                 Session ~8h &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-ok">✓ OK</span><br>
                 <span class="t-div"></span>
-                <span class="t-hi">→ GO — DreamerV3 7-DOF ready · T4 GPU · ~8h remaining</span>
+                <span class="t-hi">→ GO — world model ready · T4 GPU · ~8h remaining</span>
               </div>
             </div>
           </div>
@@ -815,6 +815,41 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
         <div class="feat-snippet">adapter.<span class="s-fn">visualize</span>(trajectories)<br><span class="s-cm"># → triptych.gif renders inline</span></div>
       </div>
 
+      <!-- WMEL bridge -->
+      <div class="feat">
+        <div class="feat-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+        </div>
+        <div class="feat-vis">
+          <svg viewBox="0 0 280 72">
+            <g font-family="ui-monospace,monospace" font-size="8" text-anchor="middle">
+              <rect x="8" y="10" width="80" height="52" rx="4" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+              <text x="48" y="24" fill="rgba(255,255,255,0.28)">DreamerV3</text>
+              <text x="48" y="38" fill="rgba(255,255,255,0.28)">Adapter</text>
+              <text x="48" y="55" fill="rgba(62,207,142,0.55)">fitted ✓</text>
+              <line x1="90" y1="36" x2="118" y2="36" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+              <polyline points="113,31 118,36 113,41" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="104" y="28" fill="rgba(255,255,255,0.2)">wraps</text>
+              <rect x="122" y="10" width="82" height="52" rx="4" fill="rgba(255,255,255,0.03)" stroke="rgba(121,192,255,0.25)" stroke-width="1"/>
+              <text x="163" y="24" fill="rgba(121,192,255,0.55)">WMEL</text>
+              <text x="163" y="38" fill="rgba(255,255,255,0.28)">encode()</text>
+              <text x="163" y="51" fill="rgba(255,255,255,0.28)">plan()</text>
+              <line x1="206" y1="36" x2="234" y2="36" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+              <polyline points="229,31 234,36 229,41" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="238" y="22" width="34" height="28" rx="4" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+              <text x="255" y="33" fill="rgba(255,255,255,0.28)">WMEL</text>
+              <text x="255" y="45" fill="rgba(62,207,142,0.55)">bench</text>
+            </g>
+          </svg>
+        </div>
+        <div class="feat-title">WMEL evaluation bridge <span style="display:inline-block;margin-left:6px;padding:1px 7px;font-size:10px;font-weight:500;border-radius:128px;border:1px solid rgba(121,192,255,0.3);color:rgba(121,192,255,0.8);vertical-align:middle">physlink[eval]</span></div>
+        <p class="feat-desc">Evaluate your trained adapter against the world-model-eval-lab harness. <code style="color:#79c0ff">DreamerWMELAdapter</code> implements random-shoot MPC in latent space — plug it directly into any WMEL <code style="color:#79c0ff">BenchmarkEnvironment</code>.</p>
+        <div class="feat-snippet"><span class="s-kw">from</span> physlink.adapters.wmel_bridge <span class="s-kw">import</span> (<br>&nbsp;&nbsp;<span class="s-fn">DreamerWMELAdapter</span><br>)<br>bridge = <span class="s-fn">DreamerWMELAdapter</span>(adapter, n_candidates=<span class="s-nm">100</span>)<br><span class="s-cm"># → BenchmarkRunner-ready PlannerPolicy</span></div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -824,7 +859,7 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
   <div class="wrap">
     <div class="sec-hd reveal">
       <div class="sec-label">Quick start</div>
-      <h2>Five steps.<br>Full pipeline.</h2>
+      <h2>Six steps.<br>Full pipeline.</h2>
       <p class="sec-desc">From a blank Colab session to a validated, exported adapted model.</p>
     </div>
     <div class="demo-grid reveal">
@@ -848,7 +883,11 @@ act = physlink.<span class="tk-fn">ActionSpace</span>.<span class="tk-fn">contin
     bounds=(<span class="tk-nm">-1.0</span>, <span class="tk-nm">1.0</span>),
 )
 
-<span class="tk-cm"># 3 — Adapt to DreamerV3</span>
+<span class="tk-cm"># 2b — Validate trajectory quality</span>
+schema = physlink.<span class="tk-fn">TrajectorySchema</span>(obs_dims=obs.dims, act_dims=act.dims)
+report = batch.<span class="tk-fn">quality_report</span>(schema)  <span class="tk-cm"># → PASS / WARN / FAIL per check</span>
+
+<span class="tk-cm"># 3 — World model adapter</span>
 adapter = physlink.<span class="tk-fn">DreamerV3Adapter</span>(obs, act)
 adapter.<span class="tk-fn">fit</span>(trajectories, steps=<span class="tk-nm">10_000</span>)
 
@@ -868,7 +907,7 @@ adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</sp
       <div class="out-stack">
         <div class="out-card lit">
           <div class="out-lbl">physlink.doctor()</div>
-          <div class="out-body">Python 3.11.2 &nbsp;<span class="ok">OK</span> &nbsp;|&nbsp; PyTorch 2.3 <span class="ok">OK</span><br>CUDA 12.1 &nbsp;&nbsp;&nbsp;<span class="ok">OK</span> &nbsp;|&nbsp; VRAM 14.8 GB <span class="ok">OK</span><br>Session ~8h &nbsp;<span class="ok">OK</span><br>──────────────────────────────<br><span class="ok">→ GO &nbsp;DreamerV3 7-DOF ready</span></div>
+          <div class="out-body">Python 3.11.2 &nbsp;<span class="ok">OK</span> &nbsp;|&nbsp; PyTorch 2.3 <span class="ok">OK</span><br>CUDA 12.1 &nbsp;&nbsp;&nbsp;<span class="ok">OK</span> &nbsp;|&nbsp; VRAM 14.8 GB <span class="ok">OK</span><br>Session ~8h &nbsp;<span class="ok">OK</span><br>──────────────────────────────<br><span class="ok">→ GO — world model ready · T4 GPU · ~8h remaining</span></div>
         </div>
         <div class="out-card">
           <div class="out-lbl">adapter.fit() progress</div>
@@ -900,6 +939,7 @@ adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</sp
         <thead><tr><th>Task</th><th class="h-bad">Without PhysLink</th><th class="h-good">With PhysLink</th></tr></thead>
         <tbody>
           <tr><td>Env diagnostics</td><td class="c-bad">Debug silent OOM at step 8 000</td><td class="c-good"><code>physlink.doctor()</code></td></tr>
+          <tr><td>Validate trajectory data before training</td><td class="c-bad">Manual checks scattered across notebooks</td><td class="c-good"><code>TrajectorySchema</code> + <code>batch.quality_report(schema)</code></td></tr>
           <tr><td>Space definitions</td><td class="c-bad">Write framework-specific mappings per adapter</td><td class="c-good"><code>ObservationSpace.from_proprioception()</code></td></tr>
           <tr><td>Session disconnect</td><td class="c-bad">Lose 3h of T4 training</td><td class="c-good">One-call checkpoint restore, no lost progress</td></tr>
           <tr><td>Physics check</td><td class="c-bad">Manually verify energy conservation</td><td class="c-good"><code>compliance_report()</code></td></tr>
@@ -938,7 +978,7 @@ adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</sp
           <div class="nb-in">In [1]:</div>
           <div class="nb-code">import physlink<br>physlink.doctor()</div>
           <div class="nb-out">Out:</div>
-          <div class="nb-ok">→ GO ✓ DreamerV3 ready</div>
+          <div class="nb-ok">→ GO ✓ world model ready</div>
           <div style="color:var(--text-3);font-size:10px;margin-top:2px">T4 · 14.8 GB · ~8h remaining</div>
         </div>
         <div class="nb-cell">
