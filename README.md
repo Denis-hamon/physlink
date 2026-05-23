@@ -5,6 +5,7 @@
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://Denis-hamon.github.io/physlink/)
 [![PyPI](https://img.shields.io/pypi/v/physlink.svg)](https://pypi.org/project/physlink/)
 [![Python](https://img.shields.io/pypi/pyversions/physlink.svg)](https://pypi.org/project/physlink/)
+[![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-b31b1b.svg)](https://arxiv.org/abs/PLACEHOLDER)
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Denis-hamon/physlink/blob/main/notebooks/quickstart.ipynb)
 
