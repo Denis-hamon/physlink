@@ -19,49 +19,26 @@
 
 ---
 
-**PhysLink bridges physical simulators and deep RL adapters in one `pip install`.**
-
 Backend-agnostic adapter library for physical simulation ML.
 
-Plug your robot trajectories into a Dreamer-inspired world model adapter without writing boilerplate space definitions, checkpoint logic, or compliance checks. PhysLink handles the plumbing — you keep the science.
+**PhysLink is the interface layer between physics simulators and world model adapters.**
 
-> **Note:** `DreamerV3Adapter` implements a Dreamer-like RSSM architecture (encoder → GRU → prior/posterior → actor/critic) and is architecturally inspired by [DreamerV3](https://github.com/danijar/dreamerv3). It is a prototype, not a wrapper around the original DreamerV3 codebase.
+Define spaces once. Validate trajectory data before training starts. Enforce physics invariants. Evaluate via the [world-model-eval-lab](https://github.com/Denis-hamon/world-model-eval-lab) benchmark harness — without rewriting the same boilerplate in every project.
 
-Read the [product thesis behind PhysLink](PRODUCT_THESIS.md): why world-model tooling needs explicit interfaces for data, actions, domain constraints, evaluation, and trust.
-
-## For Technical Reviewers
-
-Start here if you want a fast, structured read:
-
-1. **[PRODUCT_THESIS.md](PRODUCT_THESIS.md)** — why this exists and what problem it solves
-2. **[EXPERIMENT_CARD.md](EXPERIMENT_CARD.md)** — what the reference experiment claims, what it doesn't, and its known limitations
-3. **[BACKEND_BOUNDARY.md](BACKEND_BOUNDARY.md)** — exactly what PhysLink owns vs what the neural backend owns (important for avoiding the "DreamerV3 wrapper" misread)
-4. **[docs/lab-adoption-guide.md](docs/lab-adoption-guide.md)** — trajectory quality gate and compliance framework in context
-5. **[tests/](tests/)** — unit tests for spaces, types, invariant registration, and compliance reporting
-
-The reference trajectory dataset at `examples/data/reference_trajectory.jsonl` is fully reproducible: `python3 examples/check_trajectory_quality.py` regenerates it from seed=42 and re-runs the quality gate.
-
----
-
-## Why PhysLink
-
-| Without PhysLink | With PhysLink |
-|-----------------|---------------|
-| Hand-write observation/action space mappings per framework | `ObservationSpace.from_proprioception(joints=7)` |
-| Debug silent OOM on Colab at step 8 000 | `physlink.doctor()` catches it before you start |
-| Lose 3h of T4 training on session disconnect | Auto-checkpoint every N steps, resume on reconnect |
-| Manually verify energy conservation after adaptation | `register_invariant` + `compliance_report()` |
-| Stare at loss curves to diagnose model drift | Triptych GIF — Imagination / Real / Difference in one call |
+> `DreamerV3Adapter` is a Dreamer-inspired RSSM prototype (encoder → GRU → prior/posterior → actor/critic), architecturally inspired by [DreamerV3](https://github.com/danijar/dreamerv3). It is a research prototype, not a wrapper around the original codebase.
 
 ## Install
 
 ```bash
 pip install physlink
+
+# with WMEL evaluation support:
+pip install "physlink[eval]"
 ```
 
 Works on Google Colab out of the box. No CUDA required for diagnostics and space definitions.
 
-## Quick example
+## Quick start
 
 ```python
 import physlink
@@ -73,29 +50,73 @@ physlink.doctor()
 obs = physlink.ObservationSpace.from_proprioception(joints=7, include_velocity=True)
 act = physlink.ActionSpace.continuous(dims=7, bounds=[(-1.0, 1.0)] * 7)
 
-# 3. Adapt
+# 3. Validate trajectory data before training
+schema = physlink.TrajectorySchema(obs_dims=obs.dims, act_dims=act.dims)
+batch = physlink.TrajectoryBatch.from_list(episodes)
+report = batch.quality_report(schema)
+assert report.overall == "PASS"  # fails fast — don't waste GPU on bad data
+
+# 4. Train the world model adapter
 adapter = physlink.DreamerV3Adapter(obs, act)
-adapter.fit(trajectories, steps=10_000)
+adapter.fit(batch, steps=10_000)
 
-# 4. Validate physics compliance
+# 5. Enforce physics invariants
 physlink.register_invariant(adapter, "energy", fn=energy_fn, tolerance=0.05)
-report = adapter.compliance_report()
-report.plot()
+adapter.compliance_report().plot()
 
-# 5. Visualise
-adapter.visualize(trajectories)   # → triptych GIF
+# 6. Evaluate via WMEL benchmark harness
+from physlink.adapters.wmel_bridge import DreamerWMELAdapter
+bridge = DreamerWMELAdapter(adapter, n_candidates=50)
+# bridge.plan(obs, goal, horizon=20)  → action sequence via random-shoot MPC
+
+# 7. Visualize & export
+adapter.visualize(batch)   # → triptych GIF: Imagination / Real / Difference
 adapter.export("./run-01/")
 ```
 
-## Documentation
+## What PhysLink provides
 
-Full docs at **[Denis-hamon.github.io/physlink](https://Denis-hamon.github.io/physlink/)** — includes API reference, lab adoption guide, and domain-scientist quickstart.
+| | API |
+|---|---|
+| Environment diagnostic | `physlink.doctor()` |
+| Observation / action spaces | `ObservationSpace`, `ActionSpace` |
+| Trajectory data quality gate | `TrajectorySchema`, `batch.quality_report()` |
+| World model training | `DreamerV3Adapter.fit()` |
+| Physics invariant checks | `register_invariant()`, `compliance_report()` |
+| Imagination vs. reality | `adapter.visualize()` → triptych GIF |
+| WMEL evaluation bridge | `DreamerWMELAdapter` in `physlink[eval]` |
+
+## Why PhysLink
+
+| | Without PhysLink | With PhysLink |
+|---|---|---|
+| Environment check | Debug silent OOM at step 8 000 | `physlink.doctor()` in < 15 s |
+| Data validation | Manual checks scattered across notebooks | `TrajectorySchema` + `quality_report()` |
+| Space definitions | Write framework-specific mappings per adapter | `ObservationSpace.from_proprioception()` |
+| Session disconnect | Lose 3 h of T4 training | Auto-checkpoint, one-call resume |
+| Physics check | Manually verify energy conservation | `register_invariant()` + `compliance_report()` |
+| Model diagnosis | Stare at loss curves | Triptych GIF — Imagination / Real / Diff |
+| Evaluation | Build evaluation infrastructure from scratch | `DreamerWMELAdapter` + WMEL harness |
 
 ## Status
 
-`v0.1.x` — public API stable across minor versions (see [CHANGELOG](CHANGELOG.md)).  
-`test-cpu` CI passes on every PR. GPU benchmarks run on release tags.
+`v0.1.3` — public API stable across minor versions. See [CHANGELOG](CHANGELOG.md) and [ROADMAP](ROADMAP.md).
+
+`test-cpu` CI passes on every push. GPU benchmarks run on release tags.
+
+## For technical reviewers
+
+- [PRODUCT_THESIS.md](PRODUCT_THESIS.md) — why this library exists
+- [EXPERIMENT_CARD.md](EXPERIMENT_CARD.md) — what the reference experiment claims and doesn't
+- [BACKEND_BOUNDARY.md](BACKEND_BOUNDARY.md) — what PhysLink owns vs what the neural backend owns
+- [examples/wmel_integration.py](examples/wmel_integration.py) — end-to-end WMEL walkthrough
+
+The reference dataset at `examples/data/reference_trajectory.jsonl` is reproducible: `python3 examples/check_trajectory_quality.py` regenerates it from `seed=42` and re-runs the quality gate.
+
+## Documentation
+
+Full docs at **[Denis-hamon.github.io/physlink](https://Denis-hamon.github.io/physlink/)**.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome — use the provided templates.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.

@@ -381,7 +381,7 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
 
 <!-- HERO -->
 <section id="hero">
-  <div class="hero-badge"><span class="pip"></span>v0.1.2 — MIT License</div>
+  <div class="hero-badge"><span class="pip"></span>v0.1.3 — MIT License</div>
   <h1>From simulator<br><em>to trained model.</em></h1>
   <p class="hero-sub">The adapter layer that bridges your physics simulator and a Dreamer-inspired world model adapter. One library. No boilerplate. One afternoon.</p>
   <div class="hero-actions">
@@ -410,7 +410,7 @@ footer { border-top:1px solid var(--border); padding:32px 0; position:relative; 
           <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/>
         </svg>
       </div>
-      <span class="stat-k">Version</span><span class="stat-v hi">v0.1.2</span>
+      <span class="stat-k">Version</span><span class="stat-v hi">v0.1.3</span>
     </div>
     <!-- license -->
     <div class="stat">
@@ -902,7 +902,12 @@ report.<span class="tk-fn">plot</span>()
 
 <span class="tk-cm"># 5 — Visualize &amp; export</span>
 adapter.<span class="tk-fn">visualize</span>(trajectories)
-adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</span>)</code></pre>
+adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</span>)
+
+<span class="tk-cm"># 6 — Evaluate via WMEL benchmark harness</span>
+<span class="tk-kw">from</span> physlink.adapters.wmel_bridge <span class="tk-kw">import</span> <span class="tk-nm">DreamerWMELAdapter</span>
+bridge = <span class="tk-fn">DreamerWMELAdapter</span>(adapter, n_candidates=<span class="tk-nm">50</span>)
+<span class="tk-cm"># bridge.plan(obs, goal, horizon=20)</span></code></pre>
       </div>
       <div class="out-stack">
         <div class="out-card lit">
@@ -910,16 +915,20 @@ adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</sp
           <div class="out-body">Python 3.11.2 &nbsp;<span class="ok">OK</span> &nbsp;|&nbsp; PyTorch 2.3 <span class="ok">OK</span><br>CUDA 12.1 &nbsp;&nbsp;&nbsp;<span class="ok">OK</span> &nbsp;|&nbsp; VRAM 14.8 GB <span class="ok">OK</span><br>Session ~8h &nbsp;<span class="ok">OK</span><br>──────────────────────────────<br><span class="ok">→ GO — world model ready · T4 GPU · ~8h remaining</span></div>
         </div>
         <div class="out-card">
+          <div class="out-lbl">batch.quality_report(schema)</div>
+          <div class="out-body">schema_conformance &nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">PASS</span><br>obs_dimension &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">PASS</span><br>act_dimension &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">PASS</span><br>action_range &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">PASS</span><br>obs_finite &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ok">PASS</span><br>──────────────────────────────<br>overall: <span class="ok">PASS</span> &nbsp;·&nbsp; <span class="val">1000</span> steps checked</div>
+        </div>
+        <div class="out-card">
           <div class="out-lbl">adapter.fit() progress</div>
           <div class="out-body">Step <span class="val">1000</span>/10000 &nbsp;ETA <span class="val">38m</span><br>Throughput: <span class="val">12.4 step/s</span><br><span class="ok">✓</span> checkpoint → step_1000.safetensors</div>
         </div>
         <div class="out-card">
-          <div class="out-lbl">report.summary()</div>
+          <div class="out-lbl">compliance_report().summary()</div>
           <div class="out-body">energy: <span class="ok">PASS</span><br>max_residual=<span class="val">0.031</span>, threshold=<span class="val">0.05</span><br>violations=<span class="ok">0</span>/1000</div>
         </div>
         <div class="out-card">
-          <div class="out-lbl">adapter.export()</div>
-          <div class="out-body"><span class="ok">✓</span> triptych.gif<br><span class="ok">✓</span> config.yaml<br><span class="ok">✓</span> checkpoint_final.safetensors<br><span class="ok">✓</span> compliance_report.json</div>
+          <div class="out-lbl">DreamerWMELAdapter ready</div>
+          <div class="out-body">name: <span class="val">physlink-dreamer(14obs,7act,n=50)</span><br>encode() → latent dict {h, z}<br>plan(obs, goal, horizon=20) → <span class="ok">actions ✓</span></div>
         </div>
       </div>
     </div>
@@ -1008,7 +1017,7 @@ adapter.<span class="tk-fn">export</span>(<span class="tk-str">"./run-2026/"</sp
         <li><a href="https://github.com/Denis-hamon/physlink/issues" target="_blank" rel="noopener noreferrer">Issues</a></li>
         <li><a href="./domain-scientists/">Domain Scientists</a></li>
       </ul>
-      <div class="foot-copy">MIT License · v0.1.2</div>
+      <div class="foot-copy">MIT License · v0.1.3</div>
     </div>
   </div>
 </footer>

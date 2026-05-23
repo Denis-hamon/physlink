@@ -1,6 +1,6 @@
 """PhysLink — backend-agnostic adapter library for physical simulation ML."""
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 from physlink.adapters.dreamer import DreamerV3Adapter  # Story 3.1
 from physlink.core._types import TrajectoryBatch, TrajectoryBuffer, TrajectorySchema

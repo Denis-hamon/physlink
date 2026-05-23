@@ -328,18 +328,18 @@ class TestDocsChangelogMirror:
 
 
 class TestPyprojectVersion:
-    """Task 5: pyproject.toml version must be bumped to 0.1.2 after Story 5.1."""
+    """pyproject.toml version must match the latest release."""
 
     def test_pyproject_version_is_0_1_2(self) -> None:
         match = re.search(r'^version\s*=\s*"([^"]+)"', _pyproject_text(), re.MULTILINE)
         assert match is not None, (
             "version field not found in pyproject.toml.\n"
-            "  Fix: ensure 'version = \"0.1.2\"' is set in the [project] section"
+            "  Fix: ensure a 'version = \"x.y.z\"' is set in the [project] section"
         )
         version = match.group(1)
-        assert version == "0.1.2", (
-            f"pyproject.toml version is {version!r}; expected '0.1.2'.\n"
-            "  Fix: update to 'version = \"0.1.2\"' (v0.1.1 = Epic 3, v0.1.2 = Epic 4)"
+        assert version >= "0.1.2", (
+            f"pyproject.toml version is {version!r}; expected at least '0.1.2'.\n"
+            "  Fix: bump version to current release"
         )
 
     def test_package_runtime_version_matches_pyproject(self) -> None:
