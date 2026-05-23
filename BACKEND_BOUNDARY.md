@@ -49,7 +49,7 @@ Concretely:
 3. **Call registered invariants** — at each trajectory batch, evaluate invariants via `self._invariants` and accumulate into a `ComplianceReport`.
 4. **Write checkpoints in `.safetensors` format** — PhysLink's export pipeline expects this format.
 
-A clean DreamerV3 (Danijar's) backend, or a Stable-Baselines3 wrapper, could be connected in ~50 lines by implementing `BaseAdapter`.
+A clean DreamerV3 (Danijar's) backend, or a Stable-Baselines3 wrapper, should be small enough to audit in a single sitting by implementing `BaseAdapter`.
 
 ## Summary
 

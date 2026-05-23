@@ -26,7 +26,7 @@ Example:
   - `violations()` → list of violation records with trajectory index, residual, and cause text
   - `plot()` → matplotlib histogram of residuals (lazy import — matplotlib not required at import time)
   - `export(path)` → write a JSON compliance record suitable for audit trail and institutional review
-- `TrajectoryBuffer.export(path)` — persist a trajectory dataset to disk (safetensors format) to
+- `TrajectoryBuffer.export(path)` — persist a trajectory dataset to disk (pickle format) to
   survive Colab session resets.
 - `TrajectoryBuffer.load(path)` — reload a previously exported trajectory dataset.
 - `physlink.__all__` finalized to exactly 7 symbols: `doctor`, `ObservationSpace`, `ActionSpace`,
@@ -37,7 +37,7 @@ Example:
 
 ### Added
 
-- `DreamerV3Adapter` — adapter wrapping the DreamerV3 world-model for use with `ObservationSpace`
+- `DreamerV3Adapter` — Dreamer-inspired RSSM prototype for use with `ObservationSpace`
   and `ActionSpace`. Added to `physlink.__all__` (now 5 symbols).
 - `DreamerV3Adapter.fit(config)` — async training loop with rich progress bar showing step count,
   ETA, prediction health metric, and throughput (steps/s).
