@@ -33,20 +33,26 @@ The public API (`physlink.__all__`) is stable across minor versions of the v0.1.
 
 ---
 
-## Track 3 — World model evaluation harness (planned)
+## Track 3 — World model evaluation harness (complete)
 
-**Goal:** measure whether the adapter's world model is actually useful — not just that it runs without error.
+**Goal:** measure whether the adapter's world model is actually useful via the
+[world-model-eval-lab](https://github.com/Denis-hamon/world-model-eval-lab) (WMEL)
+benchmark harness rather than building duplicate evaluation infrastructure.
 
 | Component | Status |
 |-----------|--------|
-| Persistence baseline (predict t+1 = t) | planned |
-| Linear dynamics baseline (least-squares fit) | planned |
-| Short-horizon prediction error | planned |
-| Long-horizon drift metric | planned |
-| Action sensitivity check | planned |
-| `WorldModelEvaluationReport` — JSON + Markdown summary | planned |
+| `DreamerWMELAdapter` bridge — `physlink.adapters.wmel_bridge` | ✓ shipped |
+| `examples/wmel_integration.py` — end-to-end walkthrough | ✓ shipped |
+| `physlink[eval]` optional dependency group | ✓ shipped |
+| WMEL environments (maze_toy, two-room, DMC Acrobot) | via [world-model-eval-lab](https://github.com/Denis-hamon/world-model-eval-lab) |
+| CPG (Counterfactual Planning Gap) metric | via world-model-eval-lab v0.14 |
 
-This track is scope-limited to diagnostic tooling. No claim is made about learning performance — see [EXPERIMENT_CARD.md](EXPERIMENT_CARD.md) for what the current prototype does and does not prove.
+The bridge implements `LeWMAdapterStub` via random-shoot MPC in latent space:
+`encode()` (posterior mean), `rollout()` (prior imagination), `score()` (L2 in z-space), `plan()`.
+
+Install: `pip install "physlink[eval]"` then see `examples/wmel_integration.py`.
+
+No claim is made about learning performance — see [EXPERIMENT_CARD.md](EXPERIMENT_CARD.md) for what the current prototype does and does not prove.
 
 ---
 

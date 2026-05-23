@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `physlink.adapters.wmel_bridge.DreamerWMELAdapter` — bridge that wraps a fitted
+  `DreamerV3Adapter` to satisfy the [world-model-eval-lab](https://github.com/Denis-hamon/world-model-eval-lab)
+  `LeWMAdapterStub` interface. Implements random-shoot MPC in latent space via
+  `encode()` / `rollout()` / `score()` / `plan()`. Requires `pip install "physlink[eval]"`.
+- `examples/wmel_integration.py` — end-to-end example: synthetic data → fit adapter →
+  wrap bridge → run WMEL `BenchmarkRunner`.
+- `physlink[eval]` optional dependency group: installs `torch` + `wmel` from GitHub.
+- `TrajectorySchema`, `TrajectoryBatch`, `TrajectoryBuffer` added to `physlink.__all__`
+  (10 public symbols total, up from 7).
+- `TrajectoryBatch.quality_report(schema)` — validate a batch against a `TrajectorySchema`
+  and return a `TrajectoryQualityReport` with per-check results and an overall verdict.
+- `ROADMAP.md` — public three-track roadmap: interface layer (complete), quality gate
+  (complete), evaluation harness via WMEL bridge (complete).
+
 <!-- For future PRs: mark breaking changes with ⚠️ **Breaking:** followed by a > **Migration:** block.
 Example:
 ### Changed
