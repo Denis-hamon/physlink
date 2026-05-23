@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "physlink"
-version = "0.1.2"
+version = "0.1.3"
 description = "Backend-agnostic adapter library for physical simulation ML"
 readme = "README.md"
 license = {text = "MIT"}

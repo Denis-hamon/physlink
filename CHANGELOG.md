@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- For future PRs: mark breaking changes with ⚠️ **Breaking:** followed by a > **Migration:** block.
+Example:
+### Changed
+⚠️ **Breaking:** `DreamerV3Adapter.fit()` now returns `AdaptationRun` instead of `None`.
+> **Migration:** Replace `adapter.fit(...)` with `run = adapter.fit(...)`. If you did not use the return value, no change is needed.
+-->
+
+## [0.1.3] - 2026-05-23
+
 ### Added
 
 - `physlink.adapters.wmel_bridge.DreamerWMELAdapter` — bridge that wraps a fitted
@@ -22,13 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and return a `TrajectoryQualityReport` with per-check results and an overall verdict.
 - `ROADMAP.md` — public three-track roadmap: interface layer (complete), quality gate
   (complete), evaluation harness via WMEL bridge (complete).
-
-<!-- For future PRs: mark breaking changes with ⚠️ **Breaking:** followed by a > **Migration:** block.
-Example:
-### Changed
-⚠️ **Breaking:** `DreamerV3Adapter.fit()` now returns `AdaptationRun` instead of `None`.
-> **Migration:** Replace `adapter.fit(...)` with `run = adapter.fit(...)`. If you did not use the return value, no change is needed.
--->
 
 ## [0.1.2] - 2026-05-22
 
@@ -101,7 +103,8 @@ Example:
 - `physlink.__all__` = `["doctor", "ObservationSpace", "ActionSpace", "PhysLinkError"]` — the
   initial 4-symbol public API surface.
 
-[Unreleased]: https://github.com/Denis-hamon/physlink/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/Denis-hamon/physlink/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/Denis-hamon/physlink/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Denis-hamon/physlink/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Denis-hamon/physlink/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Denis-hamon/physlink/releases/tag/v0.1.0
