@@ -54,6 +54,23 @@ class TrajectoryBatch:
     def __iter__(self) -> Iterator[dict[str, Any]]:
         return iter(self.data)
 
+    def quality_report(self, schema: TrajectorySchema) -> TrajectoryQualityReport:
+        """Validate this batch against a schema and return a quality report.
+
+        Args:
+            schema: The TrajectorySchema describing expected obs_dims, act_dims, and action_bounds.
+
+        Returns:
+            A TrajectoryQualityReport with per-check results and an overall PASS/WARN/FAIL verdict.
+
+        Example:
+            >>> schema = TrajectorySchema(obs_dims=14, act_dims=7)
+            >>> report = tb.quality_report(schema)
+            >>> report.overall
+            'PASS'
+        """
+        return schema.validate(self)
+
     def __repr__(self) -> str:
         return f"TrajectoryBatch(n={len(self.data)})"
 
@@ -300,3 +317,248 @@ class AdaptationRun:
         default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()
     )
     elapsed_seconds: float = 0.0
+
+
+# ── Trajectory quality validation ─────────────────────────────────────────────
+
+
+@dataclass
+class CheckResult:
+    """Result of a single trajectory schema check.
+
+    Args:
+        name: Check identifier (e.g. ``"schema_conformance"``).
+        status: ``"PASS"``, ``"WARN"``, or ``"FAIL"``.
+        details: Human-readable description of the check outcome.
+        count_checked: Number of items examined (0 if not applicable).
+        count_failed: Number of items that failed (0 if PASS).
+    """
+
+    name: str
+    status: str
+    details: str
+    count_checked: int = 0
+    count_failed: int = 0
+
+
+@dataclass
+class TrajectoryQualityReport:
+    """Quality report produced by ``TrajectorySchema.validate()``.
+
+    Args:
+        checks: Ordered list of individual check results.
+        overall: Aggregate verdict — ``"FAIL"`` if any check failed, ``"WARN"`` if any warned,
+            ``"PASS"`` otherwise.
+        total_steps: Total number of trajectory steps examined.
+        episodes: Number of distinct episodes found in the batch.
+
+    Example:
+        >>> schema = TrajectorySchema(obs_dims=14, act_dims=7)
+        >>> report = schema.validate(batch)
+        >>> report.overall
+        'PASS'
+        >>> d = report.to_dict()
+        >>> d["schema_version"]
+        '1.0'
+    """
+
+    checks: list[CheckResult]
+    overall: str
+    total_steps: int
+    episodes: int
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a JSON-compatible dict (no ``generated_at`` — fully deterministic).
+
+        Returns:
+            Dict with ``schema_version``, ``summary``, ``checks``, and ``overall`` keys.
+
+        Example:
+            >>> d = report.to_dict()
+            >>> d["overall"]
+            'PASS'
+        """
+        return {
+            "schema_version": "1.0",
+            "summary": {
+                "total_steps": self.total_steps,
+                "episodes": self.episodes,
+            },
+            "checks": [
+                {
+                    "name": c.name,
+                    "status": c.status,
+                    "details": c.details,
+                    **({"count_checked": c.count_checked, "count_failed": c.count_failed}
+                       if c.count_checked else {}),
+                }
+                for c in self.checks
+            ],
+            "overall": self.overall,
+        }
+
+    def __str__(self) -> str:
+        lines = [f"TrajectoryQualityReport: {self.overall}"]
+        for c in self.checks:
+            icon = "✓" if c.status == "PASS" else ("⚠" if c.status == "WARN" else "✗")
+            lines.append(f"  [{icon}] {c.name}: {c.details}")
+        return "\n".join(lines)
+
+
+@dataclass
+class TrajectorySchema:
+    """Schema contract for trajectory data — drives the quality gate in ``quality_report()``.
+
+    Args:
+        obs_dims: Expected length of the ``"obs"`` vector in every step.
+        act_dims: Expected length of the ``"action"`` vector in every step.
+        action_bounds: ``(low, high)`` range that every action value must satisfy.
+        required_keys: Set of keys that must be present in every trajectory step dict.
+
+    Example:
+        >>> schema = TrajectorySchema(obs_dims=14, act_dims=7)
+        >>> batch = TrajectoryBatch.from_list(
+        ...     [{"obs": [0.0]*14, "action": [0.0]*7, "episode_id": 0, "done": True}]
+        ... )
+        >>> report = schema.validate(batch)
+        >>> report.overall
+        'PASS'
+    """
+
+    obs_dims: int
+    act_dims: int
+    action_bounds: tuple[float, float] = (-1.0, 1.0)
+    required_keys: frozenset[str] = field(default_factory=lambda: frozenset({"obs", "action"}))
+
+    def validate(self, batch: TrajectoryBatch) -> TrajectoryQualityReport:
+        """Run all schema checks against ``batch`` and return a quality report.
+
+        Checks performed (in order):
+        1. ``schema_conformance`` — required keys present in every step.
+        2. ``obs_dimension_consistency`` — obs vector length equals ``obs_dims``.
+        3. ``act_dimension_consistency`` — action vector length equals ``act_dims``.
+        4. ``action_range`` — all action values within ``action_bounds``.
+        5. ``obs_finite`` — no NaN or Inf in any obs value.
+        6. ``episode_termination`` — every episode ends with ``done=True``.
+
+        Args:
+            batch: The batch to validate.
+
+        Returns:
+            A ``TrajectoryQualityReport`` with per-check results and an overall verdict.
+
+        Example:
+            >>> report = schema.validate(batch)
+            >>> report.overall in ("PASS", "WARN", "FAIL")
+            True
+        """
+        import math
+
+        data = list(batch)
+        checks: list[CheckResult] = []
+        lo, hi = self.action_bounds
+
+        # 1 — schema conformance
+        bad = [i for i, d in enumerate(data) if not self.required_keys.issubset(d)]
+        if bad:
+            checks.append(CheckResult(
+                "schema_conformance", "FAIL",
+                f"{len(bad)} steps missing required keys", len(data), len(bad),
+            ))
+        else:
+            checks.append(CheckResult(
+                "schema_conformance", "PASS",
+                f"{len(data)}/{len(data)} steps have required keys", len(data),
+            ))
+
+        # 2 — obs dimension consistency
+        bad = [i for i, d in enumerate(data) if len(d.get("obs", [])) != self.obs_dims]
+        if bad:
+            checks.append(CheckResult(
+                "obs_dimension_consistency", "FAIL",
+                f"{len(bad)} steps have wrong obs dim (expected {self.obs_dims})",
+                len(data), len(bad),
+            ))
+        else:
+            checks.append(CheckResult(
+                "obs_dimension_consistency", "PASS",
+                f"All obs vectors are {self.obs_dims}-dimensional", len(data),
+            ))
+
+        # 3 — action dimension consistency
+        bad = [i for i, d in enumerate(data) if len(d.get("action", [])) != self.act_dims]
+        if bad:
+            checks.append(CheckResult(
+                "act_dimension_consistency", "FAIL",
+                f"{len(bad)} steps have wrong action dim (expected {self.act_dims})",
+                len(data), len(bad),
+            ))
+        else:
+            checks.append(CheckResult(
+                "act_dimension_consistency", "PASS",
+                f"All action vectors are {self.act_dims}-dimensional", len(data),
+            ))
+
+        # 4 — action range
+        total_act, oob = 0, 0
+        for d in data:
+            for v in d.get("action", []):
+                total_act += 1
+                if v < lo or v > hi:
+                    oob += 1
+        if oob:
+            checks.append(CheckResult(
+                "action_range", "FAIL",
+                f"{oob}/{total_act} action values outside [{lo}, {hi}]", total_act, oob,
+            ))
+        else:
+            checks.append(CheckResult(
+                "action_range", "PASS",
+                f"All {total_act} action values in [{lo}, {hi}]", total_act,
+            ))
+
+        # 5 — obs finiteness
+        total_obs, non_finite = 0, 0
+        for d in data:
+            for v in d.get("obs", []):
+                total_obs += 1
+                if not math.isfinite(v):
+                    non_finite += 1
+        if non_finite:
+            checks.append(CheckResult(
+                "obs_finite", "FAIL",
+                f"{non_finite}/{total_obs} obs values are NaN or Inf", total_obs, non_finite,
+            ))
+        else:
+            checks.append(CheckResult(
+                "obs_finite", "PASS",
+                f"No NaN or Inf in {total_obs} obs values", total_obs,
+            ))
+
+        # 6 — episode termination
+        eps: dict[int, list[dict[str, Any]]] = {}
+        for d in data:
+            eps.setdefault(d.get("episode_id", 0), []).append(d)
+        incomplete = [ep for ep, steps in eps.items() if not steps[-1].get("done", False)]
+        if incomplete:
+            checks.append(CheckResult(
+                "episode_termination", "WARN",
+                f"{len(incomplete)} episodes do not end with done=True", len(eps), len(incomplete),
+            ))
+        else:
+            checks.append(CheckResult(
+                "episode_termination", "PASS",
+                f"{len(eps)}/{len(eps)} episodes terminate with done=True", len(eps),
+            ))
+
+        overall = (
+            "FAIL" if any(c.status == "FAIL" for c in checks)
+            else "WARN" if any(c.status == "WARN" for c in checks)
+            else "PASS"
+        )
+        return TrajectoryQualityReport(
+            checks=checks,
+            overall=overall,
+            total_steps=len(data),
+            episodes=len(eps),
+        )

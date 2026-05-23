@@ -37,6 +37,10 @@ notebook = [
     "nbconvert>=7.0",
     "nbformat>=5.9",
 ]
+eval = [
+    "torch",
+    "wmel @ git+https://github.com/Denis-hamon/world-model-eval-lab.git",
+]
 
 [project.urls]
 Homepage = "https://Denis-hamon.github.io/physlink/"

@@ -1,6 +1,5 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-23T10:09:37.920447+00:00",
   "data_source": "data/reference_trajectory.jsonl",
   "summary": {
     "total_steps": 500,
@@ -14,7 +13,7 @@
     {
       "name": "schema_conformance",
       "status": "PASS",
-      "details": "500/500 trajectories have required keys",
+      "details": "500/500 steps have required keys",
       "count_checked": 500,
       "count_failed": 0
     },

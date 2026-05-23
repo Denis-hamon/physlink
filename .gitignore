@@ -10,7 +10,11 @@ site/
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
 physlink_checkpoints/
 .venv/
 venv/
 .DS_Store
+
+# Design artifacts — internal review only, not part of the public repo
+design-artifacts/

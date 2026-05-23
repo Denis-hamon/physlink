@@ -21,10 +21,10 @@ import json
 import math
 import random
 import sys
-from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+import physlink
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -32,8 +32,6 @@ SEED = 42
 N_EPISODES = 10
 STEPS_PER_EPISODE = 50
 N_JOINTS = 7
-OBS_DIMS = N_JOINTS * 2  # joint positions + joint velocities
-ACT_DIMS = N_JOINTS      # joint torque commands, normalised to [-1, 1]
 
 DATA_DIR = Path(__file__).parent / "data"
 JSONL_PATH = DATA_DIR / "reference_trajectory.jsonl"
@@ -80,122 +78,27 @@ def generate_dataset(seed: int = SEED) -> list[dict[str, Any]]:
     return [step for ep in range(N_EPISODES) for step in _generate_episode(ep, rng)]
 
 
-# ── Quality checks ─────────────────────────────────────────────────────────────
-
-@dataclass
-class Check:
-    name: str
-    status: str  # PASS | WARN | FAIL
-    details: str
-    count_checked: int = 0
-    count_failed: int = 0
-
-
-def _schema(data: list[dict[str, Any]]) -> Check:
-    required = {"obs", "action"}
-    bad = [i for i, d in enumerate(data) if not required.issubset(d)]
-    if bad:
-        return Check("schema_conformance", "FAIL", f"{len(bad)} trajectories missing required keys", len(data), len(bad))
-    return Check("schema_conformance", "PASS", f"{len(data)}/{len(data)} trajectories have required keys", len(data))
-
-
-def _obs_dims(data: list[dict[str, Any]]) -> Check:
-    bad = [i for i, d in enumerate(data) if len(d.get("obs", [])) != OBS_DIMS]
-    if bad:
-        return Check("obs_dimension_consistency", "FAIL", f"{len(bad)} trajectories have wrong obs dim (expected {OBS_DIMS})", len(data), len(bad))
-    return Check("obs_dimension_consistency", "PASS", f"All obs vectors are {OBS_DIMS}-dimensional", len(data))
-
-
-def _act_dims(data: list[dict[str, Any]]) -> Check:
-    bad = [i for i, d in enumerate(data) if len(d.get("action", [])) != ACT_DIMS]
-    if bad:
-        return Check("act_dimension_consistency", "FAIL", f"{len(bad)} trajectories have wrong action dim (expected {ACT_DIMS})", len(data), len(bad))
-    return Check("act_dimension_consistency", "PASS", f"All action vectors are {ACT_DIMS}-dimensional", len(data))
-
-
-def _action_range(data: list[dict[str, Any]]) -> Check:
-    total, oob = 0, 0
-    for d in data:
-        for v in d.get("action", []):
-            total += 1
-            if v < -1.0 or v > 1.0:
-                oob += 1
-    if oob:
-        return Check("action_range", "FAIL", f"{oob}/{total} action values outside [-1, 1]", total, oob)
-    return Check("action_range", "PASS", f"All {total} action values in [-1.0, 1.0]", total)
-
-
-def _obs_finite(data: list[dict[str, Any]]) -> Check:
-    total, bad = 0, 0
-    for d in data:
-        for v in d.get("obs", []):
-            total += 1
-            if not math.isfinite(v):
-                bad += 1
-    if bad:
-        return Check("obs_finite", "FAIL", f"{bad}/{total} obs values are NaN or Inf", total, bad)
-    return Check("obs_finite", "PASS", f"No NaN or Inf in {total} obs values", total)
-
-
-def _episode_termination(data: list[dict[str, Any]]) -> Check:
-    eps: dict[int, list[dict]] = {}
-    for d in data:
-        eps.setdefault(d.get("episode_id", 0), []).append(d)
-    incomplete = [ep for ep, steps in eps.items() if not steps[-1].get("done", False)]
-    if incomplete:
-        return Check("episode_termination", "WARN", f"{len(incomplete)} episodes do not end with done=True", len(eps), len(incomplete))
-    return Check("episode_termination", "PASS", f"{len(eps)}/{len(eps)} episodes terminate with done=True", len(eps))
-
-
-def run_checks(data: list[dict[str, Any]]) -> list[Check]:
-    return [_schema(data), _obs_dims(data), _act_dims(data), _action_range(data), _obs_finite(data), _episode_termination(data)]
-
-
-# ── Report assembly ────────────────────────────────────────────────────────────
-
-def build_report(data: list[dict[str, Any]], checks: list[Check], source: str) -> dict[str, Any]:
-    eps: dict[int, int] = {}
-    for d in data:
-        eps[d.get("episode_id", 0)] = eps.get(d.get("episode_id", 0), 0) + 1
-    mean_len = sum(eps.values()) / len(eps) if eps else 0
-    overall = (
-        "FAIL" if any(c.status == "FAIL" for c in checks)
-        else "WARN" if any(c.status == "WARN" for c in checks)
-        else "PASS"
-    )
-    return {
-        "schema_version": "1.0",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "data_source": source,
-        "summary": {
-            "total_steps": len(data),
-            "episodes": len(eps),
-            "mean_episode_length": round(mean_len, 1),
-            "obs_dims": OBS_DIMS,
-            "act_dims": ACT_DIMS,
-            "seed": SEED,
-        },
-        "checks": [
-            {
-                "name": c.name,
-                "status": c.status,
-                "details": c.details,
-                **({"count_checked": c.count_checked, "count_failed": c.count_failed} if c.count_checked else {}),
-            }
-            for c in checks
-        ],
-        "overall": overall,
-    }
-
-
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    obs_space = physlink.ObservationSpace.from_proprioception(
+        joints=N_JOINTS, include_velocity=True
+    )
+    act_space = physlink.ActionSpace.continuous(
+        dims=N_JOINTS, bounds=[(-1.0, 1.0)] * N_JOINTS
+    )
+    schema = physlink.TrajectorySchema(
+        obs_dims=obs_space.dims,
+        act_dims=act_space.dims,
+        action_bounds=(-1.0, 1.0),
+    )
+
     print("PhysLink — trajectory quality gate")
     print(f"Generating {N_EPISODES} episodes × {STEPS_PER_EPISODE} steps (seed={SEED})...")
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     dataset = generate_dataset()
+    batch = physlink.TrajectoryBatch.from_list(dataset)
 
     with JSONL_PATH.open("w", encoding="utf-8") as f:
         for traj in dataset:
@@ -203,20 +106,32 @@ def main() -> None:
     print(f"  Written {len(dataset)} steps → {JSONL_PATH}")
 
     print("Running quality checks...")
-    checks = run_checks(dataset)
-    for c in checks:
-        icon = "✓" if c.status == "PASS" else ("⚠" if c.status == "WARN" else "✗")
-        print(f"  [{icon}] {c.name}: {c.details}")
+    report = batch.quality_report(schema)
+    print(report)
 
-    source = str(JSONL_PATH.relative_to(Path(__file__).parent))
-    report = build_report(dataset, checks, source)
+    base = report.to_dict()
+    base["data_source"] = str(JSONL_PATH.relative_to(Path(__file__).parent))
+    base["summary"].update({
+        "mean_episode_length": float(STEPS_PER_EPISODE),
+        "obs_dims": obs_space.dims,
+        "act_dims": act_space.dims,
+        "seed": SEED,
+    })
+    # Reorder to match canonical format: schema_version, data_source, summary, checks, overall
+    report_dict = {
+        "schema_version": base["schema_version"],
+        "data_source": base["data_source"],
+        "summary": base["summary"],
+        "checks": base["checks"],
+        "overall": base["overall"],
+    }
+
     with REPORT_PATH.open("w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2)
+        json.dump(report_dict, f, indent=2)
     print(f"  Report → {REPORT_PATH}")
 
-    overall = report["overall"]
-    print(f"\nOverall: {overall}")
-    if overall == "FAIL":
+    print(f"\nOverall: {report.overall}")
+    if report.overall == "FAIL":
         sys.exit(1)
 
 

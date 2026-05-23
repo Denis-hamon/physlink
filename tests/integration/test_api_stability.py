@@ -76,9 +76,9 @@ def test_story44_api_symbols() -> None:
 
 
 def test_story45_final_api_symbols() -> None:
-    """Story 4.5: Epic 4 complete — verify EXACTLY 7 public symbols, no more, no less."""
+    """Story 4.5: Epic 4 complete — original 7 symbols still present (subset check)."""
     import physlink
-    expected_all_7 = {
+    expected_epic4 = {
         "ActionSpace",
         "ComplianceReport",
         "DreamerV3Adapter",
@@ -88,12 +88,37 @@ def test_story45_final_api_symbols() -> None:
         "register_invariant",
     }
     actual = set(physlink.__all__)
-    assert actual == expected_all_7, (
-        f"Epic 4 final API surface mismatch.\n"
+    assert expected_epic4.issubset(actual), (
+        f"Epic 4 API surface regression.\n"
+        f"  Missing: {expected_epic4 - actual}\n"
+        f"  Got:     {sorted(actual)}\n"
+        f"  Fix:     restore missing symbols to physlink.__all__"
+    )
+
+
+def test_trajectory_schema_api_symbols() -> None:
+    """TrajectorySchema, TrajectoryBatch, TrajectoryBuffer added to public API (v0.1.3)."""
+    import physlink
+    from physlink import TrajectoryBatch, TrajectoryBuffer, TrajectorySchema  # noqa: F401
+
+    expected = {
+        "ActionSpace",
+        "ComplianceReport",
+        "DreamerV3Adapter",
+        "ObservationSpace",
+        "PhysLinkError",
+        "TrajectoryBatch",
+        "TrajectoryBuffer",
+        "TrajectorySchema",
+        "doctor",
+        "register_invariant",
+    }
+    actual = set(physlink.__all__)
+    assert actual == expected, (
+        f"v0.1.3 API surface mismatch.\n"
         f"  Got:      {sorted(actual)}\n"
-        f"  Expected: {sorted(expected_all_7)}\n"
-        f"  Fix:      physlink.__all__ must contain exactly these 7 symbols — "
-        f"no extras, no omissions (AR-10)"
+        f"  Expected: {sorted(expected)}\n"
+        f"  Fix:      physlink.__all__ must contain exactly these 10 symbols"
     )
 
 
